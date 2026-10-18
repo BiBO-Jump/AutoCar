@@ -1,0 +1,193 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #0A1628 0%, #0F2137 40%, #00d4ff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.gradient-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.gradient-green {
+    background: linear-gradient(135deg, #059669 0%, #00e5a0 100%);
+}
+
+.tech-border {
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.tech-glow {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(10, 22, 40, 0.15);
+}
+
+.btn-primary {
+    @apply bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-all shadow-md hover:shadow-lg;
+}
+
+.btn-secondary {
+    @apply bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-6 rounded-lg transition-all;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.quiz-option {
+    @apply border-2 border-gray-200 rounded-xl p-4 cursor-pointer transition-all hover:border-cyan-400 hover:bg-cyan-50;
+}
+
+.quiz-option.selected {
+    @apply border-cyan-500 bg-cyan-50;
+}
+
+.quiz-option.correct {
+    @apply border-green-500 bg-green-50 text-green-700;
+}
+
+.quiz-option.wrong {
+    @apply border-red-500 bg-red-50 text-red-700;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.tab-active {
+    @apply text-cyan-500 border-b-2 border-cyan-500;
+}
+
+.stat-card {
+    @apply bg-white rounded-2xl p-6 shadow-md card-hover;
+}
+
+.course-card {
+    @apply bg-white rounded-2xl overflow-hidden shadow-md card-hover cursor-pointer;
+}
+
+.knowledge-card {
+    @apply bg-gradient-to-br from-white to-slate-50 rounded-xl p-5 shadow-sm border border-slate-100 card-hover;
+}
+
+.link-card {
+    @apply bg-white rounded-xl p-4 shadow-sm border border-slate-100 card-hover flex items-center gap-4 cursor-pointer;
+}
+
+.resource-section {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, rgba(0, 229, 160, 0.05) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+/* ========== 响应式全局断点规则 ========== */
+
+/* 移动端优先：所有基础样式为手机尺寸 */
+@media (max-width: 639px) {
+    .gradient-bg {
+        padding: 1.5rem !important;
+    }
+    .gradient-bg h1 {
+        font-size: 1.25rem !important;
+    }
+    .stat-card {
+        padding: 1rem !important;
+    }
+    .stat-card .text-2xl {
+        font-size: 1.125rem !important;
+    }
+    .resource-section {
+        padding: 1rem !important;
+    }
+    .resource-section h2 {
+        font-size: 1.125rem !important;
+    }
+    .knowledge-card {
+        padding: 1rem !important;
+    }
+    .link-card {
+        padding: 0.75rem !important;
+    }
+    /* 表格在移动端横向滚动容器 */
+    .overflow-x-auto table {
+        min-width: 480px;
+    }
+}
+
+/* 平板 */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .gradient-bg h1 {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* 防止 flex / grid 中长文本撑破容器 */
+.text-ellipsis, .truncate, h1, h2, h3, p, span, a {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* flex 子元素防止 min-width 撑破 */
+.flex > * {
+    min-width: 0;
+    min-height: 0;
+}
+
+/* grid 子元素防止内容溢出 */
+.grid > * {
+    min-width: 0;
+}

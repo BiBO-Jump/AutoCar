@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>九键车载学习平台 · 智驾新能源技术学习</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#00d4ff',
+                            600: '#0099cc',
+                            700: '#007aa3',
+                        },
+                        car: {
+                            dark: '#0A1628',
+                            blue: '#0F2137',
+                            accent: '#00d4ff',
+                            highlight: '#00e5a0',
+                            energy: '#00e5a0',
+                            tech: '#00d4ff',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div id="app">
+        <nav id="navbar" class="bg-car-dark/95 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-all"></nav>
+        <main id="main-content" class="container mx-auto px-4 py-6 max-w-6xl"></main>
+        <footer id="footer" class="bg-car-dark text-white py-8 mt-12 border-t border-slate-700"></footer>
+    </div>
+
+    <script src="js/data.js?v=1"></script>
+    <script src="js/lessons.js?v=1"></script>
+    <script src="js/canoe-sim.js?v=2"></script>
+    <script src="js/adas-viz.js?v=1"></script>
+    <script src="js/app.js?v=2"></script>
+</body>
+</html>

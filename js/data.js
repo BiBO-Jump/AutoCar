@@ -106,157 +106,106 @@ const LEARNING_METHODS = [
 const COURSES = [
     {
         id: 1,
-        title: 'CAN总线基础与测试',
-        category: '总线协议',
+        title: '测试基础',
+        category: '测试基础',
         level: '入门',
-        duration: '8小时',
-        lessons: 12,
-        icon: '🔌',
-        color: 'from-blue-500 to-cyan-500',
-        description: '深入学习CAN总线协议原理、报文结构、物理层特性，以及使用Vector CANoe/CANalyzer进行总线测试的实操技能。',
-        tags: ['CAN 2.0', 'CAN FD', '仲裁', '错误帧'],
+        duration: '6小时',
+        lessons: 6,
+        icon: '🧪',
+        color: 'from-green-500 to-emerald-500',
+        description: '车载测试入门必修：基础测试方法、用例编写、BUG管理工具与生命周期，以及Linux/ADB系统基础。',
+        tags: ['测试方法', '测试用例', 'Jira', 'Linux/ADB'],
         progress: 0,
         sections: [
-            { title: '车载网络概述', lessons: ['车载网络演进', 'CAN总线在整车中的地位', '拓扑结构'] },
-            { title: 'CAN协议原理', lessons: ['报文结构详解', '仲裁机制', '错误检测与处理'] },
-            { title: '物理层与布线', lessons: ['差分信号', '终端电阻', 'CAN总线布线规范'] },
-            { title: '测试工具实战', lessons: ['CANoe基础操作', 'CAPL语言入门', '测试脚本编写'] }
+            { title: '测试基本功', lessons: ['基础测试方法', '测试用例编写'] },
+            { title: 'BUG管理', lessons: ['BUG管理工具—Jira使用', '车载中BUG的生命周期'] },
+            { title: '系统基础', lessons: ['Linux基础', 'ADB基础'] }
         ]
     },
     {
         id: 2,
-        title: 'UDS诊断协议详解',
-        category: '诊断协议',
-        level: '进阶',
-        duration: '12小时',
-        lessons: 18,
-        icon: '🔍',
-        color: 'from-purple-500 to-pink-500',
-        description: '全面掌握ISO 14229 UDS诊断服务，包括会话管理、安全访问、常用诊断服务及其在车载测试中的应用。',
-        tags: ['ISO 14229', '诊断服务', '刷写', '安全访问'],
+        title: '汽车通用基础',
+        category: '汽车基础',
+        level: '入门',
+        duration: '8小时',
+        lessons: 13,
+        icon: '🚗',
+        color: 'from-blue-500 to-cyan-500',
+        description: '理解整车五大域概念与汽车通信网络架构，深入CAN总线协议原理、物理层布线及CANoe测试实战。',
+        tags: ['五大域', '通信网络', 'CAN', 'CANoe'],
         progress: 0,
         sections: [
-            { title: 'UDS基础', lessons: ['OSI模型与诊断', '诊断架构', '会话层协议'] },
-            { title: '核心诊断服务', lessons: ['0x10会话控制', '0x11 ECU复位', '0x22读数据', '0x2E写数据'] },
-            { title: '安全机制', lessons: ['0x27安全访问', '密钥算法', '会话与安全的关系'] },
-            { title: '进阶服务', lessons: ['0x14清除DTC', '0x19读DTC信息', '0x31例程控制', '0x34/0x36/0x37刷写流程'] }
+            { title: '整车与通信概念', lessons: ['汽车的五大域概念', '汽车通信网络', 'CAN网络概述'] },
+            { title: 'CAN协议原理', lessons: ['拓扑结构', '报文结构详解', '仲裁机制', '错误检测与处理'] },
+            { title: '物理层与布线', lessons: ['差分信号', '终端电阻', 'CAN总线布线规范'] },
+            { title: 'CANoe测试实战', lessons: ['CANoe基础操作', 'CAPL语言入门', '测试脚本编写'] }
         ]
     },
     {
         id: 3,
-        title: '整车测试基础',
-        category: '测试基础',
-        level: '入门',
-        duration: '6小时',
-        lessons: 10,
-        icon: '🚗',
-        color: 'from-green-500 to-emerald-500',
-        description: '了解整车测试的基本概念、测试流程、测试分类，以及如何制定测试计划和编写测试用例。',
-        tags: ['测试流程', '测试用例', '测试计划', '缺陷管理'],
+        title: '测试常用工具及软件使用',
+        category: '工具使用',
+        level: '进阶',
+        duration: '8小时',
+        lessons: 4,
+        icon: '🛠️',
+        color: 'from-purple-500 to-pink-500',
+        description: '掌握车载测试日常工具链：CANoe、ZCANPRO总线工具，Mobaxterm终端工具与UDS诊断协议。',
+        tags: ['CANoe', 'ZCANPRO', 'Mobaxterm', 'UDS'],
         progress: 0,
         sections: [
-            { title: '测试基础概念', lessons: ['软件测试金字塔', 'V模型与敏捷', '整车测试范畴'] },
-            { title: '测试分类', lessons: ['单元测试', '集成测试', '系统测试', '验收测试'] },
-            { title: '测试设计方法', lessons: ['等价类划分', '边界值分析', '状态迁移法', '场景法'] },
-            { title: '测试管理', lessons: ['测试计划编写', '缺陷生命周期', '测试报告撰写'] }
+            { title: '总线工具', lessons: ['CANoe使用', 'ZCANPRO使用'] },
+            { title: '终端与诊断', lessons: ['Mobaxterm使用', 'UDS诊断协议'] }
         ]
     },
     {
         id: 4,
-        title: 'AUTOSAR架构与测试',
-        category: '软件架构',
-        level: '高级',
-        duration: '16小时',
-        lessons: 22,
-        icon: '🏗️',
-        color: 'from-orange-500 to-red-500',
-        description: '深入学习AUTOSAR Classic和Adaptive平台架构，了解SWC开发、RTE通信、BSW模块及其测试方法。',
-        tags: ['AUTOSAR Classic', 'AUTOSAR Adaptive', 'RTE', 'BSW'],
+        title: '自动化工具使用',
+        category: '自动化',
+        level: '进阶',
+        duration: '8小时',
+        lessons: 4,
+        icon: '⚙️',
+        color: 'from-teal-500 to-cyan-500',
+        description: '用脚本解放双手：CAPL、Shell、Python在车载测试自动化中的使用方法与学习思路。',
+        tags: ['CAPL', 'Shell', 'Python', '自动化'],
         progress: 0,
         sections: [
-            { title: 'AUTOSAR概述', lessons: ['AUTOSAR历史与目标', 'Classic vs Adaptive', '架构分层'] },
-            { title: '应用层SWC', lessons: ['SWC类型', '端口接口', '组件设计'] },
-            { title: 'RTE通信', lessons: ['信号交互', '事件机制', '多SWC调度'] },
-            { title: 'BSW模块', lessons: ['诊断栈', '通信栈', '操作系统'] },
-            { title: 'AUTOSAR测试', lessons: ['单元测试', '集成测试', '配置验证'] }
+            { title: '脚本语言', lessons: ['CAPL脚本使用', 'Shell脚本', 'Python基础'] },
+            { title: '实战思路', lessons: ['车载测试中使用及学习思路'] }
         ]
     },
     {
         id: 5,
-        title: '车载以太网测试',
-        category: '总线协议',
-        level: '进阶',
-        duration: '10小时',
-        lessons: 15,
-        icon: '🌐',
-        color: 'from-indigo-500 to-blue-500',
-        description: '学习车载以太网技术，包括100/1000Mbps物理层、TCP/IP协议栈、SOME/IP中间件及测试方法。',
-        tags: ['Ethernet', 'SOME/IP', 'TCP/IP', 'DoIP'],
+        title: 'AI时代如何利用好AI完善自动化以及学习技术',
+        category: 'AI赋能',
+        level: '拓展',
+        duration: '2小时',
+        lessons: 1,
+        icon: '💡',
+        color: 'from-amber-500 to-orange-500',
+        description: '探讨如何借助AI工具提升测试自动化效率，以及AI时代下车载技术的学习方法。',
+        tags: ['AI辅助', '自动化', '学习方法'],
         progress: 0,
         sections: [
-            { title: '车载以太网基础', lessons: ['为什么需要以太网', '物理层标准', '与CAN的对比'] },
-            { title: 'TCP/IP协议栈', lessons: ['IP地址与路由', 'TCP/UDP协议', 'DHCP/DNS'] },
-            { title: 'SOME/IP中间件', lessons: ['服务发现', '事件订阅', '序列化'] },
-            { title: '车载诊断', lessons: ['DoIP协议', '以太网刷写', '安全通信'] }
+            { title: 'AI赋能车载测试', lessons: ['AI时代如何利用好AI完善自动化以及学习技术'] }
         ]
     },
     {
         id: 6,
-        title: 'HI测试与HIL仿真',
-        category: '测试方法',
-        level: '进阶',
-        duration: '14小时',
-        lessons: 20,
-        icon: '🖥️',
-        color: 'from-teal-500 to-cyan-500',
-        description: '掌握硬件在环(HIL)测试系统搭建、模型构建、自动化测试脚本编写，了解主流HIL平台使用。',
-        tags: ['HIL', 'dSPACE', 'NI', '实时仿真'],
-        progress: 0,
-        sections: [
-            { title: 'HIL测试原理', lessons: ['HIL vs SIL vs PIL', 'HIL系统组成', '测试场景搭建'] },
-            { title: '仿真模型', lessons: ['Plant模型', '车辆动力学', '发动机模型'] },
-            { title: 'dSPACE平台', lessons: ['ControlDesk操作', 'DS1006板卡', '自动化测试'] },
-            { title: 'NI平台', lessons: ['VeriStand配置', 'PXI硬件', '测试脚本开发'] },
-            { title: '测试工程实战', lessons: ['测试用例执行', '结果分析', '报告生成'] }
-        ]
-    },
-    {
-        id: 7,
-        title: '新能源汽车测试',
-        category: '专项测试',
-        level: '高级',
-        duration: '18小时',
-        lessons: 25,
-        icon: '⚡',
-        color: 'from-yellow-500 to-orange-500',
-        description: '全面覆盖新能源汽车三电系统测试，包括动力电池、电机驱动、整车控制器的测试技术与标准。',
-        tags: ['BMS', 'MCU', 'VCU', '充电测试'],
-        progress: 0,
-        sections: [
-            { title: '动力电池测试', lessons: ['电池包结构', 'BMS功能测试', '充放电测试', '安全测试'] },
-            { title: '电机系统测试', lessons: ['永磁同步电机', '逆变器测试', '控制算法验证'] },
-            { title: '整车控制测试', lessons: ['VCU功能', '能量管理', '驾驶模式切换'] },
-            { title: '充电系统测试', lessons: ['慢充快充', '桩车协议', '充电安全'] },
-            { title: '标准与法规', lessons: ['GB/T标准', '安全要求', '试验规范'] }
-        ]
-    },
-    {
-        id: 8,
         title: '智能驾驶ADAS测试',
-        category: '专项测试',
+        category: 'ADAS测试',
         level: '高级',
-        duration: '20小时',
-        lessons: 28,
-        icon: '🤖',
+        duration: '16小时',
+        lessons: 13,
+        icon: '🚘',
         color: 'from-rose-500 to-pink-500',
-        description: '学习ADAS功能测试、感知测试、规控测试，掌握场景库建设、仿真测试工具和实车测试方法。',
-        tags: ['ADAS', '自动驾驶', '感知', '规划控制'],
+        description: '从ADAS概述到实车测试：L0-L5分级、传感器、功能与状态机、测试场景、问题定位与实车安全规范。',
+        tags: ['ADAS', 'L0-L5', '传感器', '实车测试'],
         progress: 0,
         sections: [
-            { title: 'ADAS概述', lessons: ['SAE分级', 'ADAS功能地图', '传感器介绍'] },
-            { title: '感知测试', lessons: ['摄像头测试', '毫米波雷达测试', '激光雷达测试', '融合算法验证'] },
-            { title: '规控测试', lessons: ['车道保持LKA', '自适应巡航ACC', '自动紧急制动AEB'] },
-            { title: '仿真测试', lessons: ['Prescan/Simulink', '场景库构建', '回归测试'] },
+            { title: 'ADAS概述', lessons: ['L0 — L5概念', '传感器介绍', 'ADAS所有功能', 'ADAS状态机', '感知—规划—预测—控制—执行'] },
+            { title: '工作内容', lessons: ['测试场景', '部门结构', '项目阶段', '问题定位', '日志抓取'] },
             { title: '实车测试', lessons: ['测试场地', '测试设备', '安全措施'] }
         ]
     }
@@ -421,13 +370,200 @@ testCase TestCheckMessage() {
   - 碰撞避免率
   - 减速度响应时间
   - 制动力度控制`
+    },
+    {
+        id: 'kb7',
+        category: '总线协议',
+        title: 'CAN FD vs CAN 2.0 对比',
+        content: `CAN FD (Flexible Data-rate) 与经典 CAN 2.0 的关键差异：
+
+1. 数据场长度
+  - CAN 2.0：最多 8 字节
+  - CAN FD：最多 64 字节（DLC 编码 0-8/12/16/20/24/32/48/64）
+
+2. 波特率
+  - CAN 2.0：全帧同一波特率，最高 1 Mbps
+  - CAN FD：双波特率——仲裁段（最高 1 Mbps）+ 数据段（最高 5-8 Mbps），BRS 位切换
+
+3. 新增控制位
+  - FDF：标识 FD 帧（隐性）
+  - BRS：位速率切换
+  - ESI：错误状态指示
+
+4. CRC 增强
+  - 数据场 ≤16 字节用 17 位 CRC，>16 字节用 21 位 CRC
+  - 增加填充位计数（Stuff Count）校验
+
+5. 兼容性
+  - CAN FD 节点可收发经典帧
+  - 经典 CAN 节点收到 FD 帧会报错，不可混挂同一总线（除非网关隔离）
+
+6. 典型应用：智驾域控、OTA 刷写（64 字节数据场使刷写吞吐提升约 8 倍）`
+    },
+    {
+        id: 'kb8',
+        category: '总线协议',
+        title: 'LIN 总线基础与测试',
+        content: `LIN (Local Interconnect Network) 低成本串行总线，常用于车身域：
+
+1. 基本特性
+  - 单线传输（基于 ISO 9141 K 线电平）
+  - 主从架构：1 主节点 + 最多 15 从节点
+  - 波特率：最高 20 kbps（常用 9600/19200 bps）
+  - 无需晶振：从节点用同步场自校准
+
+2. 帧结构
+  - 报文头（主节点发）：间隔场(Break ≥13位显性) + 同步场(0x55) + PID(标识符+奇偶校验)
+  - 应答（从节点发）：数据 1-8 字节 + 校验和
+  - 校验和：经典校验（仅数据，LIN 1.x）/ 增强校验（含 PID，LIN 2.x）
+
+3. 调度表
+  - 主节点按 LDF 定义的调度表周期发送帧头
+  - 无条件帧 / 事件触发帧 / 偶发帧 / 诊断帧(0x3C/0x3D)
+
+4. 典型应用
+  - 车窗/雨刮/座椅/空调面板/氛围灯
+  - 成本敏感、速率要求低的执行器
+
+5. 测试要点
+  - 波特率容差、同步场精度
+  - 校验和错误注入
+  - 从节点无响应超时处理
+  - 睡眠/唤醒（唤醒信号 250μs-5ms 显性电平）`
+    },
+    {
+        id: 'kb9',
+        category: '总线协议',
+        title: '车载以太网与 SOME/IP',
+        content: `车载以太网是智驾/座舱域的骨干网络：
+
+1. 物理层
+  - 100BASE-T1 / 1000BASE-T1：单对双绞线全双工（OPEN Alliance 制定）
+  - 与传统 100BASE-TX 不兼容，需专用 PHY 与连接器
+
+2. 协议栈
+  - UDP：服务发现与事件通知（实时性好）
+  - TCP：大数据传输（刷写、日志）
+  - VLAN/AVB/TSN：时间敏感网络，保证确定性延迟
+
+3. SOME/IP (Scalable service-Oriented MiddlewarE over IP)
+  - 面向服务的中间件，AUTOSAR 标准组件
+  - 报文头：Service ID + Method ID + Length + Client/Session ID + Protocol/Interface Version + Message Type + Return Code
+  - 三种通信模式：Request/Response、Fire&Forget、Event（订阅/发布）
+
+4. SOME/IP-SD (Service Discovery)
+  - Offer Service：服务端周期广播服务地址
+  - Find/Subscribe：客户端查找并订阅事件组
+  - 组播地址段 224.0.0.x
+
+5. 测试要点
+  - SD 时序（Initial Wait / Repetition Phase）
+  - 序列化字节序与对齐
+  - 事件组订阅/退订、TTL 过期
+  - 负载与延迟（TSN 优先级验证）`
+    },
+    {
+        id: 'kb10',
+        category: '诊断协议',
+        title: 'DoIP 以太网诊断',
+        content: `DoIP (Diagnostics over IP, ISO 13400) 基于以太网的 UDS 诊断：
+
+1. 为什么需要 DoIP
+  - CAN 带宽 500kbps，刷写 1MB 需 10+ 分钟
+  - 100M 以太网刷写快 100 倍，满足 OTA/大软件刷写需求
+
+2. 连接建立流程
+  - 车辆发现（Vehicle Announcement / Identification）
+  - 路由激活（Routing Activation, 0x0005）
+  - 之后透传标准 UDS 报文（Diagnostic Message, 0x8001）
+
+3. DoIP 报文头（8 字节）
+  - 协议版本(0x02/0x03) + 版本取反
+  - 载荷类型(2字节)：0x0005路由激活 / 0x8001诊断 / 0x8002诊断正响应 / 0x8003诊断负响应
+  - 载荷长度(4字节)
+
+4. 寻址
+  - 逻辑地址 2 字节：Tester 常用 0x0E80，ECU 由 OEM 定义
+  - 功能寻址：0xE000 段
+
+5. 测试要点
+  - 路由激活超时与并发连接数
+  - 非法载荷类型/长度异常处理
+  - 与 CAN 网关的 DoIP-CAN 路由（ISO 13400 网关）
+  - 刷写吞吐量与断点续传`
+    },
+    {
+        id: 'kb11',
+        category: '软件架构',
+        title: 'AUTOSAR Classic 分层架构',
+        content: `AUTOSAR Classic Platform 分层（自底向上）：
+
+1. 微控制器层 (MCAL)
+  - 直接驱动硬件：ADC/PWM/CAN/SPI/Fls/Dio 驱动
+  - 与具体芯片强相关，由芯片厂提供
+
+2. ECU 抽象层 (ECU Abstraction)
+  - 屏蔽硬件差异：I/O 硬件抽象、存储/通信硬件抽象
+
+3. 服务层 (Services Layer)
+  - 操作系统 (OS, 符合 OSEK)
+  - 通信栈 (Com/PduR/CanIf/CanSM)
+  - 诊断栈 (Dcm/Dem/Fim)
+  - 存储栈 (NvM/MemIf/FEE/EA)
+  - 网络管理 (Nm/ComM/BswM)
+
+以上三层合称 BSW (Basic Software)
+
+4. RTE (Runtime Environment)
+  - 连接应用层 SWC 与 BSW 的胶水层
+  - 实现 SWC 间 Port 通信（S/R 与 C/S 接口）
+  - 代码由工具链自动生成（如 DaVinci Configurator）
+
+5. 应用层 (Application Layer)
+  - SWC (Software Component)：原子组件，与硬件无关
+  - 端口接口：Sender-Receiver (S/R)、Client-Server (C/S)
+  - Runnable：由 OS Task 周期/事件触发
+
+记忆口诀：M 硬 E 抽 S 服务，RTE 中间 A 应用。`
+    },
+    {
+        id: 'kb12',
+        category: '测试方法',
+        title: 'ISO 26262 功能安全与 ASIL',
+        content: `ISO 26262 道路车辆功能安全标准核心概念：
+
+1. 什么是功能安全
+  - 由电子电气系统故障（失效）导致的风险控制
+  - 不处理机械失效与人为误用（那是 SOTIF ISO 21448）
+
+2. 安全生命周期
+  - 概念阶段 → 产品开发 → 生产 → 运行 → 报废
+  - 核心：HARA（危害分析与风险评估）
+
+3. ASIL 等级（A 最低，D 最高）
+  - 由 S/E/C 三因子组合确定：
+    S 严重度（S0无伤 ~ S3致命伤）
+    E 暴露率（E0极低 ~ E4高概率）
+    C 可控性（C0易控 ~ C3难控）
+  - QM：低于 ASIL A，按常规质量流程开发即可
+  - 典型：AEB 制动指令 ASIL D，氛围灯 QM
+
+4. 关键概念
+  - 安全目标 (Safety Goal)：最高层安全需求
+  - ASIL 分解：如 ASIL D = ASIL B + ASIL B（冗余）
+  - 安全机制：看门狗、ECC、双核锁步(Lockstep)
+
+5. 测试要求（ASIL 越高越严格）
+  - 需求覆盖、故障注入测试
+  - 代码覆盖率：ASIL D 要求 MC/DC 覆盖
+  - 工具置信度 (TCL1-3) 评估`
     }
 ];
 
 const QUIZZES = [
     {
         id: 1,
-        courseId: 1,
+        courseId: 2,
         title: 'CAN总线基础测试',
         questions: [
             {
@@ -464,7 +600,7 @@ const QUIZZES = [
     },
     {
         id: 2,
-        courseId: 2,
+        courseId: 3,
         title: 'UDS诊断协议测试',
         questions: [
             {
@@ -501,7 +637,7 @@ const QUIZZES = [
     },
     {
         id: 3,
-        courseId: 3,
+        courseId: 1,
         title: '整车测试基础测试',
         questions: [
             {
@@ -575,7 +711,7 @@ const QUIZZES = [
     },
     {
         id: 5,
-        courseId: 8,
+        courseId: 6,
         title: 'ADAS智能驾驶测试',
         questions: [
             {
@@ -612,7 +748,7 @@ const QUIZZES = [
     }
 ];
 
-const CATEGORIES = ['全部', '总线协议', '诊断协议', '测试基础', '软件架构', '测试方法', '专项测试'];
+const CATEGORIES = ['全部', '测试基础', '汽车基础', '工具使用', '自动化', 'AI赋能', 'ADAS测试'];
 
 const USER_DATA = {
     name: '车载测试工程师',

@@ -129,7 +129,16 @@ function renderCanoeSimulator() {
     content.className = 'container mx-auto px-4 py-6 max-w-6xl fade-in';
     content.innerHTML = `
         <div class="fade-in">
-            <button onclick="navigate('courses')" class="text-cyan-600 hover:underline mb-4 flex items-center text-sm">← 返回课程列表</button>
+            <button onclick="navigate('home')" class="text-cyan-600 hover:underline mb-4 flex items-center text-sm">← 返回首页</button>
+
+            <!-- 教学模拟声明 -->
+            <div class="mb-4 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-2.5 text-[11px] sm:text-xs text-amber-200 leading-relaxed flex items-start gap-2">
+                <span class="text-amber-400 font-bold flex-shrink-0">⚠️</span>
+                <div>
+                    <strong>教学模拟 · 不连接真实硬件</strong> 本页面所有报文、波形、指示灯、VN1610/UDS 响应均为前端模拟数据，
+                    仅用于演示 CANoe/UDS 的界面布局和操作流程；不能控制或读取真实 CANoe、VN1610、ECU、CAN 总线或其他商业软件。
+                </div>
+            </div>
 
             <div class="gradient-bg rounded-3xl p-5 sm:p-8 mb-6 text-white relative overflow-hidden">
                 <div class="absolute -top-20 -right-20 w-60 h-60 bg-cyan-400/10 rounded-full"></div>

@@ -4,45 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>九键车载学习平台 · 智驾新能源技术学习</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css">
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#00d4ff',
-                            600: '#0099cc',
-                            700: '#007aa3',
-                        },
-                        car: {
-                            dark: '#0A1628',
-                            blue: '#0F2137',
-                            accent: '#00d4ff',
-                            highlight: '#00e5a0',
-                            energy: '#00e5a0',
-                            tech: '#00d4ff',
+        // 主题初始化 —— 最前面，防闪烁
+        (function() {
+            var saved = localStorage.getItem('theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var useDark = saved ? saved === 'dark' : prefersDark;
+            document.documentElement.classList.toggle('dark', useDark);
+            document.documentElement.classList.toggle('light', !useDark);
+        })();
+        // Tailwind 配置（必须在 CDN 脚本前）
+        window.tailwind = {
+            config: {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: { 50:'#ecfeff', 100:'#cffafe', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490' },
+                            car:     { dark:'#0A1628', blue:'#0F2137', accent:'#00d4ff', energy:'#00e5a0' }
                         }
                     }
                 }
             }
-        }
+        };
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 关键：自定义样式放在 Tailwind CDN 之后加载，这样我们的 !important 能覆盖 Tailwind 生成的规则 -->
+    <link rel="stylesheet" href="css/style.css?v=rebuild14">
+    <!-- 内联 light 覆盖规则 v2（Tailwind CDN 会吞掉外部 CSS 里的 html.light 选择器，必须放内联 style）
+         系统化全量映射：文本 / 背景 / 边框 / 渐变区 / 组件，覆盖 app.js 全部历史 class -->
+    <style>
+        /* ===== 1. 文本色全量映射（深 → 浅） ===== */
+        html.light .text-white,
+        html.light .text-slate-100 { color: #0f172a !important; }
+        html.light .text-slate-200,
+        html.light .text-gray-800 { color: #1e293b !important; }
+        html.light .text-slate-300,
+        html.light .text-gray-700 { color: #334155 !important; }
+        html.light .text-slate-400,
+        html.light .text-gray-600 { color: #55657d !important; }
+        html.light .text-slate-500,
+        html.light .text-gray-500 { color: #8291a8 !important; }
+        html.light .text-gray-400 { color: #94a3b8 !important; }
+        html.light .text-cyan-100,
+        html.light .text-cyan-200,
+        html.light .text-cyan-300 { color: #0e7490 !important; }
+        html.light .text-cyan-400,
+        html.light .text-cyan-500 { color: #0891b2 !important; }
+        html.light .text-cyan-600 { color: #0e7490 !important; }
+        html.light .text-emerald-300,
+        html.light .text-emerald-400 { color: #047857 !important; }
+        html.light .text-emerald-500 { color: #059669 !important; }
+        html.light .text-amber-300,
+        html.light .text-amber-400 { color: #b45309 !important; }
+        html.light .text-violet-300,
+        html.light .text-violet-400 { color: #6d28d9 !important; }
+        html.light .text-pink-400,
+        html.light .text-rose-400 { color: #be185d !important; }
+        html.light .text-red-400 { color: #b91c1c !important; }
+        html.light .text-blue-400 { color: #1d4ed8 !important; }
+        html.light .text-indigo-400 { color: #4f46e5 !important; }
+        html.light .text-teal-400 { color: #0f766e !important; }
+        html.light .text-orange-400 { color: #c2410c !important; }
+        html.light .text-yellow-400 { color: #a16207 !important; }
+        html.light .text-primary-500 { color: #0891b2 !important; }
+        html.light .text-primary-600,
+        html.light .text-primary-700 { color: #0e7490 !important; }
+
+        /* ===== 2. 背景色全量映射（柔和冷调浅灰，非纯白） ===== */
+        html.light .bg-slate-950,
+        html.light .bg-slate-900 { background: #f0f5f9 !important; border-color: #e2e8f0 !important; }
+        html.light .bg-slate-800 { background: #e3eaf1 !important; border-color: #e2e8f0 !important; }
+        html.light .bg-slate-800\/40,
+        html.light .bg-slate-800\/50,
+        html.light .bg-slate-800\/60 { background: rgba(227, 234, 241, 0.92) !important; }
+        html.light .bg-slate-800\/70,
+        html.light .bg-slate-800\/80 { background: rgba(227, 234, 241, 0.97) !important; }
+        html.light .bg-slate-900\/40,
+        html.light .bg-slate-900\/50,
+        html.light .bg-slate-900\/60 { background: #dfe8f0 !important; }
+        html.light .bg-slate-900\/80 { background: rgba(240, 245, 249, 0.95) !important; }
+        html.light .bg-slate-700 { background: #d8e1ea !important; }
+        html.light .bg-slate-700\/50 { background: rgba(216, 225, 234, 0.85) !important; }
+        html.light .bg-black\/40,
+        html.light .bg-black\/60 { background: rgba(223, 232, 240, 0.92) !important; }
+        html.light .bg-gray-50 { background: #e6edf3 !important; }
+        html.light .bg-gray-100 { background: #dbe4ec !important; }
+        html.light .bg-gray-200 { background: #cdd8e2 !important; }
+        html.light .bg-white { background: #ecf2f7 !important; }
+        html.light .bg-primary-50 { background: #ecfeff !important; }
+        html.light .bg-primary-100 { background: #cffafe !important; }
+        html.light .bg-cyan-500\/5,
+        html.light .bg-cyan-500\/10 { background: rgba(8, 145, 178, 0.06) !important; }
+        html.light .bg-cyan-500\/15,
+        html.light .bg-cyan-500\/20 { background: rgba(8, 145, 178, 0.1) !important; }
+        html.light .bg-emerald-500\/5 { background: rgba(5, 150, 105, 0.05) !important; }
+        html.light .bg-emerald-500\/10 { background: rgba(5, 150, 105, 0.07) !important; }
+        html.light .bg-emerald-500\/20 { background: rgba(5, 150, 105, 0.12) !important; }
+        html.light .bg-violet-500\/10 { background: rgba(109, 40, 217, 0.06) !important; }
+        html.light .bg-amber-500\/5 { background: rgba(180, 83, 9, 0.04) !important; }
+        html.light .bg-amber-500\/10 { background: rgba(180, 83, 9, 0.06) !important; }
+        html.light .bg-red-500\/5 { background: rgba(185, 28, 28, 0.04) !important; }
+        html.light .bg-slate-700\/60 { background: rgba(216, 225, 234, 0.92) !important; }
+        html.light .bg-slate-900\/70 { background: rgba(240, 245, 249, 0.92) !important; }
+        html.light .divide-slate-700\/50 > * + * { border-color: #e2e8f0 !important; }
+        html.light .border-slate-700\/60 { border-color: #dbe3ec !important; }
+        html.light .border-red-500\/30 { border-color: rgba(185, 28, 28, 0.25) !important; }
+        html.light .border-amber-500\/30 { border-color: rgba(180, 83, 9, 0.3) !important; }
+        html.light .text-red-500 { color: #dc2626 !important; }
+        html.light .text-emerald-500 { color: #059669 !important; }
+
+        /* ===== 3. 边框色全量映射 ===== */
+        html.light .border-slate-950,
+        html.light .border-slate-900,
+        html.light .border-slate-800 { border-color: #e2e8f0 !important; }
+        html.light .border-slate-700,
+        html.light .border-slate-700\/50 { border-color: #dbe3ec !important; }
+        html.light .border-slate-600 { border-color: #cbd5e1 !important; }
+        html.light .border-gray-100 { border-color: #eef2f7 !important; }
+        html.light .border-gray-200 { border-color: #e2e8f0 !important; }
+        html.light .border-gray-300 { border-color: #cbd5e1 !important; }
+        html.light .border-white\/10,
+        html.light .border-white\/25 { border-color: rgba(148, 163, 184, 0.3) !important; }
+        html.light .border-cyan-500\/20,
+        html.light .border-cyan-500\/30 { border-color: rgba(8, 145, 178, 0.3) !important; }
+        html.light .border-emerald-500\/30 { border-color: rgba(5, 150, 105, 0.3) !important; }
+
+        /* ===== 4. 卡片 ===== */
+        html.light .card { background: rgba(241, 246, 250, 0.95) !important; border-color: rgba(148,163,184,0.28) !important; color: #0f172a !important; }
+        html.light .card:hover { background: #f6fafc !important; border-color: rgba(8,145,178,0.45) !important; box-shadow: 0 10px 28px rgba(8,145,178,0.12) !important; }
+
+        /* ===== 5. 浅色主题：小标题黑体加粗 ===== */
+        html.light .font-bold,
+        html.light .font-semibold { font-weight: 800 !important; }
+        html.light .card .font-bold { font-weight: 900 !important; letter-spacing: 0.01em; }
+        html.light h1, html.light h2, html.light h3 { font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif !important; }
+
+        /* ===== 6. Hero / 渐变区文字 ===== */
+        html.light .bg-clip-text { background-image: linear-gradient(90deg, #0891b2, #047857) !important; }
+        html.light .gradient-bg .text-white { color: #0f172a !important; }
+        html.light .gradient-bg .text-cyan-100,
+        html.light .gradient-bg .text-cyan-300 { color: #0e7490 !important; }
+        html.light .gradient-bg .text-slate-300 { color: #475569 !important; }
+        html.light .gradient-bg .text-slate-400 { color: #64748b !important; }
+        html.light .gradient-bg .badge { background: rgba(255,255,255,0.85) !important; color: #0e7490 !important; border-color: rgba(8,145,178,0.3) !important; font-weight: 600 !important; }
+
+        /* 行业前沿横幅（青→绿渐变 + 白字，浅色下保持深色横幅） */
+        html.light .gradient-bg.industry-banner {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 40%, #10b981 100%) !important;
+            color: #ffffff !important;
+        }
+        html.light .gradient-bg.industry-banner .text-white { color: #ffffff !important; }
+        html.light .gradient-bg.industry-banner .text-slate-300 { color: rgba(255,255,255,0.92) !important; }
+        html.light .gradient-bg.industry-banner .text-slate-400 { color: rgba(255,255,255,0.75) !important; }
+        html.light .gradient-bg.industry-banner .badge {
+            background: rgba(255,255,255,0.22) !important;
+            color: #ffffff !important;
+            border-color: rgba(255,255,255,0.35) !important;
+        }
+
+        /* ===== 7. 表单控件 ===== */
+        html.light input, html.light select, html.light textarea {
+            background: #f2f7fa !important; color: #0f172a !important; border-color: #cbd5e1 !important;
+        }
+        html.light input::placeholder { color: #94a3b8 !important; }
+
+        /* ===== 8. 进度条 / 滚动条已在 style.css 变量驱动 ===== */
+        html.light .shadow-lg, html.light .shadow-xl, html.light .shadow-2xl {
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="min-h-screen">
+    <script>
+        // body 背景同步
+        (function() {
+            var useDark = document.documentElement.classList.contains('dark');
+            document.body.classList.toggle('theme-dark', useDark);
+            document.body.classList.toggle('theme-light', !useDark);
+            document.body.style.background = useDark ? '#050d18' : '#e9eef4';
+        })();
+    </script>
     <div id="app">
-        <nav id="navbar" class="bg-car-dark/95 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-all"></nav>
+        <nav id="navbar" class="sticky top-0 z-50 transition-all"></nav>
         <main id="main-content" class="container mx-auto px-4 py-6 max-w-6xl"></main>
-        <footer id="footer" class="bg-car-dark text-white py-8 mt-12 border-t border-slate-700"></footer>
+        <footer id="footer" class="py-8 mt-12 border-t"></footer>
     </div>
 
-    <script src="js/data.js?v=1"></script>
-    <script src="js/lessons.js?v=1"></script>
-    <script src="js/canoe-sim.js?v=2"></script>
-    <script src="js/adas-viz.js?v=1"></script>
-    <script src="js/app.js?v=2"></script>
+    <!-- Three.js (泊车 3D 动画 + 智驾可视化) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/data.js?v=rebuild14"></script>
+    <script src="js/lessons.js?v=rebuild14"></script>
+    <script src="js/canoe-sim.js?v=rebuild14"></script>
+    <script src="js/adas-viz.js?v=rebuild14"></script>
+    <script src="js/domains.js?v=rebuild14"></script>
+    <script src="js/parking-sim.js?v=rebuild14"></script>
+    <script src="js/app.js?v=rebuild14"></script>
 </body>
 </html>
+

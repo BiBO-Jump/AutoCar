@@ -34,7 +34,8 @@ const DOMAIN_INFO = {
         ],
         related: [
             { page: 'uds-simulator',   icon: '🔌', name: 'UDS 诊断模拟器', desc: '刷写与诊断会话流程是动力域测试基础' },
-            { page: 'canoe-simulator', icon: '🖥️', name: 'CANoe 模拟器', desc: '总线报文监控与故障注入思路相通' }
+            { page: 'canoe-simulator', icon: '🖥️', name: 'CANoe 模拟器', desc: '总线报文监控与故障注入思路相通' },
+            { href: 'yangwang-u9/index.html', icon: '🏎️', name: '仰望 U9 3D 拆解', desc: '四电机 + 刀片电池 + 800V 高压平台实车结构参考' }
         ]
     },
     chassis: {
@@ -50,7 +51,8 @@ const DOMAIN_INFO = {
         ],
         related: [
             { page: 'canoe-simulator', icon: '🖥️', name: 'CANoe 模拟器', desc: '总线监控与 Trace 分析通用方法' },
-            { page: 'uds-simulator',   icon: '🔌', name: 'UDS 诊断模拟器', desc: '底盘控制器诊断与故障码练习' }
+            { page: 'uds-simulator',   icon: '🔌', name: 'UDS 诊断模拟器', desc: '底盘控制器诊断与故障码练习' },
+            { href: 'yangwang-u9/index.html', icon: '🏎️', name: '仰望 U9 3D 拆解', desc: '云辇-X 悬架 + 碳纤维底盘 + 四电机独立控制实车参考' }
         ]
     },
     adas: {
@@ -146,7 +148,17 @@ function renderDomainPage() {
                     <span class="text-[10px] text-slate-500 hidden sm:inline">教学模拟 · 不连接真实硬件</span>
                 </div>
                 <div class="grid sm:grid-cols-2 gap-3">
-                    ${d.related.map(r => `
+                    ${d.related.map(r => r.href ? `
+                        <a href="${r.href}" target="_blank" rel="noopener"
+                                class="text-left bg-slate-800/60 border border-cyan-500/10 hover:border-cyan-500/50 rounded-xl p-4 transition-all group block">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xl">${r.icon}</span>
+                                <span class="font-bold text-white text-sm">${r.name}</span>
+                                <span class="text-[10px] text-cyan-400 ml-auto opacity-0 group-hover:opacity-100 transition-all">打开 →</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400">${r.desc}</div>
+                        </a>
+                    ` : `
                         <button onclick="navigate('${r.page}')"
                                 class="text-left bg-slate-800/60 border border-cyan-500/10 hover:border-cyan-500/50 rounded-xl p-4 transition-all group">
                             <div class="flex items-center gap-2 mb-1">

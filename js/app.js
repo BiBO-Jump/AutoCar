@@ -1035,6 +1035,40 @@ function renderHome() {
                 </div>
             </div>
 
+            <!-- 车型 3D 拆解 -->
+            <div class="card p-4 sm:p-6 mb-6 slide-up">
+                <div class="flex items-center gap-2 mb-4">
+                    <h3 class="font-bold text-white text-base sm:text-lg">🏎️ 车型 3D 拆解</h3>
+                    <span class="badge badge-violet">交互式 3D</span>
+                </div>
+                <a href="yangwang-u9/index.html" target="_blank" rel="noopener"
+                   class="car-3d-card block bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-orange-500/20 hover:border-orange-400/60 rounded-2xl p-5 sm:p-6 transition-all group">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div class="text-5xl flex-shrink-0">🏎️</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <span class="font-bold text-white text-lg sm:text-xl">仰望 U9 · 3D 拆解可视化</span>
+                                <span class="badge badge-amber text-[10px]">纯电超跑</span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-3">
+                                易四方四电机独立驱动 · 云辇-X 智能车身控制 · 刀片电池 · 碳纤维底盘。
+                                点击部件可单独高亮/拆解，查看结构参数与技术说明，对应五大域的真实工程映射。
+                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                                <span class="badge text-[10px]">四电机 e⁴</span>
+                                <span class="badge text-[10px]">80 kWh 刀片电池</span>
+                                <span class="badge text-[10px]">云辇-X</span>
+                                <span class="badge text-[10px]">碳纤维单体壳</span>
+                                <span class="badge text-[10px]">蝴蝶门</span>
+                            </div>
+                        </div>
+                        <div class="text-orange-400 font-semibold text-sm whitespace-nowrap flex items-center gap-1 group-hover:gap-2 transition-all">
+                            进入 3D 拆解 →
+                        </div>
+                    </div>
+                </a>
+            </div>
+
             <!-- 学习社群 & 内容平台 -->
             <div class="card p-4 sm:p-6 mb-6 slide-up">
                 <div class="grid sm:grid-cols-2 gap-5 sm:gap-6 items-center">
@@ -1945,32 +1979,32 @@ function parseContentToHTML(content) {
     html = html.replace(/## (.+)/g, '<h2 class="text-2xl font-bold text-slate-100 mt-8 mb-4 pb-2 border-b-2 border-cyan-500/20">$1</h2>');
     html = html.replace(/### (.+)/g, '<h3 class="text-xl font-semibold text-slate-200 mt-6 mb-3">$1</h3>');
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-cyan-300">$1</strong>');
+
+    // 先处理代码块（避免行内代码正则消耗围栏反引号）
+    html = html.replace(/```[\s\S]*?```/g, match => {
+        const code = match.replace(/```\w*\n?|```/g, '');
+        return `<pre class="bg-slate-950 text-emerald-300 border border-slate-800 p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono leading-relaxed">${code.trim()}</pre>`;
+    });
+
     html = html.replace(/`([^`]+)`/g, '<code class="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded text-sm font-mono">$1</code>');
 
     const tableRegex = /(\|.+\|\n)+/g;
     html = html.replace(tableRegex, match => {
         const lines = match.trim().split('\n');
         let isNew = true;
+        let thead = '';
         let tbody = '';
         lines.forEach(line => {
             if (line.includes('---')) return;
             const cells = line.split('|').filter(c => c.trim() !== '');
             if (isNew) {
                 isNew = false;
-                return `<div class="overflow-x-auto my-4"><table class="w-full text-sm border-collapse bg-slate-800/40 rounded-lg overflow-hidden">
-                    <thead class="bg-cyan-500/10">
-                        <tr>${cells.map(c => `<th class="px-4 py-3 text-left font-semibold text-cyan-300 border border-slate-700">${c.trim()}</th>`).join('')}</tr>
-                    </thead><tbody>`;
+                thead = `<tr>${cells.map(c => `<th class="px-4 py-3 text-left font-semibold text-cyan-300 border border-slate-700">${c.trim()}</th>`).join('')}</tr>`;
             } else {
                 tbody += `<tr class="hover:bg-slate-800/40">${cells.map(c => `<td class="px-4 py-3 border border-slate-700 text-slate-300">${c.trim()}</td>`).join('')}</tr>`;
             }
         });
-        return tbody + '</tbody></table></div>';
-    });
-
-    html = html.replace(/```[\s\S]*?```/g, match => {
-        const code = match.replace(/```\w*\n?|```/g, '');
-        return `<pre class="bg-slate-950 text-emerald-300 border border-slate-800 p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono leading-relaxed">${code.trim()}</pre>`;
+        return `<div class="overflow-x-auto my-4"><table class="w-full text-sm border-collapse bg-slate-800/40 rounded-lg overflow-hidden"><thead class="bg-cyan-500/10">${thead}</thead><tbody>${tbody}</tbody></table></div>`;
     });
 
     html = html.replace(/^- (.+)$/gm, '<li class="ml-6 list-disc text-slate-300">$1</li>');

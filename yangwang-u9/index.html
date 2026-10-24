@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>仰望 U9 · 3D 拆解可视化</title>
+<style>
+  :root{
+    --bg:#04060c;
+    --panel:rgba(11,16,25,0.72);
+    --panel-solid:rgba(9,13,21,0.92);
+    --border:rgba(120,180,255,0.14);
+    --border-hi:rgba(120,180,255,0.32);
+    --text:#dbe7ff;
+    --muted:#7f90ab;
+    --accent:#ff7a2f;
+    --cyan:#2bd7ff;
+    --green:#3dff9e;
+    --mono:"SFMono-Regular","JetBrains Mono",Consolas,"Roboto Mono",monospace;
+    --sans:"Inter","Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;user-select:none}
+  #scene{position:fixed;inset:0;z-index:0}
+  #scene canvas{display:block}
+  #vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.5) 100%)}
+
+  #hud{position:fixed;top:0;left:0;right:0;z-index:5;padding:18px 22px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;pointer-events:none}
+  .brand{pointer-events:auto;min-width:0}
+  .brand .kicker{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .brand .kicker .live{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.8s infinite}
+  .brand h1{font-size:26px;font-weight:800;letter-spacing:.02em;line-height:1.08;background:linear-gradient(180deg,#ffffff,#bcd0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .brand h1 em{font-style:normal;color:var(--accent);-webkit-text-fill-color:var(--accent)}
+  .brand .sub{font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:.02em;line-height:1.6;max-width:520px}
+  .badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;pointer-events:auto;max-width:560px}
+  .badge{font-family:var(--mono);font-size:10.5px;color:var(--cyan);border:1px solid rgba(43,215,255,.22);background:rgba(43,215,255,.05);padding:5px 10px;border-radius:7px;backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;line-height:1.25}
+  .badge b{color:#eafcff;font-size:12.5px}
+  .badge.orange{color:var(--accent);border-color:rgba(255,122,47,.3);background:rgba(255,122,47,.07)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .panel{position:fixed;z-index:5;background:var(--panel);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(14px) saturate(1.1);box-shadow:0 8px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.02);overflow:hidden}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;letter-spacing:.04em;color:#cfe0ff}
+  .panel-head .count{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  #panel-left{top:118px;left:20px;width:240px;max-height:calc(100vh - 210px);display:flex;flex-direction:column}
+  #parts-list{overflow-y:auto;padding:8px;flex:1}
+  #parts-list::-webkit-scrollbar{width:5px}
+  #parts-list::-webkit-scrollbar-thumb{background:rgba(120,180,255,.2);border-radius:3px}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s;margin-bottom:2px}
+  .row:hover{background:rgba(120,180,255,.06)}
+  .row.sel{background:rgba(120,180,255,.1);border-color:var(--border-hi)}
+  .row .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 8px currentColor}
+  .row .nm{flex:1;font-size:12.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .nm small{display:block;font-size:9.5px;color:var(--muted);font-family:var(--mono)}
+  .row .st{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:5px;flex:0 0 auto}
+  .row .st.on{color:var(--green);background:rgba(61,255,158,.1);border:1px solid rgba(61,255,158,.25)}
+  .row .st.off{color:var(--muted);background:rgba(127,144,171,.08);border:1px solid rgba(127,144,171,.18)}
+
+  #panel-right{top:118px;right:20px;width:306px;max-height:calc(100vh - 210px);display:flex;flex-direction:column}
+  #detail{overflow-y:auto;padding:16px}
+  #detail::-webkit-scrollbar{width:5px}
+  #detail::-webkit-scrollbar-thumb{background:rgba(120,180,255,.2);border-radius:3px}
+  .d-empty{color:var(--muted);font-size:12.5px;line-height:1.8;text-align:center;padding:26px 8px}
+  .d-empty .ico{font-size:30px;display:block;margin-bottom:10px;opacity:.6}
+  .d-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+  .d-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 12px currentColor;flex:0 0 auto}
+  .d-head h2{font-size:16.5px;font-weight:700;line-height:1.15}
+  .d-en{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:.06em;margin-top:2px}
+  .d-tag{margin-left:auto;font-size:10px;color:var(--cyan);border:1px solid rgba(43,215,255,.25);background:rgba(43,215,255,.07);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .d-desc{font-size:12px;color:#b9c7e0;line-height:1.75;margin-bottom:14px}
+  .d-params{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+  .dp{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:6px 10px;border-radius:8px;background:rgba(120,180,255,.05);border:1px solid rgba(120,180,255,.08)}
+  .dp span:first-child{color:var(--muted);white-space:nowrap}
+  .dp span:last-child{font-family:var(--mono);color:#dce9ff;text-align:right}
+  .d-actions{display:flex;gap:8px}
+
+  .btn{font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;color:#0a0d12;background:linear-gradient(180deg,var(--accent),#e85f14);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:9px 12px;transition:transform .1s,filter .15s;flex:1;letter-spacing:.02em}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:rgba(120,180,255,.08);color:#cfe0ff;border:1px solid var(--border-hi)}
+  .btn.ghost:hover{background:rgba(120,180,255,.14)}
+
+  #toolbar{position:fixed;top:118px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .tb{font-family:var(--sans);font-size:11.5px;font-weight:600;cursor:pointer;color:#cfe0ff;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:8px 12px;backdrop-filter:blur(12px);transition:background .15s,border-color .15s,color .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .tb:hover{background:rgba(120,180,255,.1);border-color:var(--border-hi)}
+  .tb.active{color:var(--accent);border-color:rgba(255,122,47,.45);background:rgba(255,122,47,.1)}
+  .tb .ic{font-size:14px;line-height:1}
+
+  #hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:5;display:flex;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:9px 18px;backdrop-filter:blur(12px);font-size:11.5px;color:var(--muted);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  #hint b{color:#cfe0ff;font-weight:600}
+  #hint .sep{width:1px;height:14px;background:var(--border)}
+  #foot-note{position:fixed;left:20px;bottom:16px;z-index:5;font-size:10px;color:rgba(127,144,171,.65);pointer-events:none;line-height:1.5}
+
+  #labels{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+  .label{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;color:#dbe7ff;background:rgba(8,12,20,.66);border:1px solid rgba(120,180,255,.22);border-radius:7px;padding:4px 8px;backdrop-filter:blur(6px);transition:border-color .15s,background .15s;transform-origin:center bottom}
+  .label:hover{background:rgba(20,28,42,.8);border-color:var(--border-hi)}
+  .label.active{border-color:var(--accent);background:rgba(255,122,47,.12);color:#fff}
+  .label .dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 6px currentColor}
+  .label .lt{font-size:11px}
+  .label .lp{font-family:var(--mono);font-size:9px;color:var(--muted)}
+
+  #loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:var(--bg);transition:opacity .5s}
+  #loading .ring{width:44px;height:44px;border-radius:50%;border:3px solid rgba(120,180,255,.15);border-top-color:var(--accent);animation:spin 1s linear infinite}
+  #loading p{font-size:12px;letter-spacing:.2em;color:var(--muted)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #err{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:var(--bg)}
+  #err .box{max-width:420px;text-align:center;padding:30px;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
+  #err h2{color:#ff6a6a;margin-bottom:10px;font-size:16px}
+  #err p{color:var(--muted);font-size:12.5px;line-height:1.7}
+
+  @media (max-width:920px){
+    #panel-left{display:none}
+    #panel-right{top:auto;left:12px;right:12px;bottom:70px;width:auto;max-height:38vh}
+    #hud{padding:14px 14px 10px;flex-direction:column;gap:10px}
+    .brand h1{font-size:20px}
+    .badges .badge{font-size:9.5px;padding:4px 8px}
+    #toolbar{top:auto;bottom:96px;gap:5px;transform:none;left:12px}
+    .tb{padding:7px 9px;font-size:10.5px}
+    #hint{gap:10px;font-size:10px;padding:8px 12px;bottom:10px}
+    #foot-note{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div id="vignette"></div>
+
+<header id="hud">
+  <div class="brand">
+    <div class="kicker"><span class="live"></span> BYD · Yangwang · 甲骨文「电」徽标</div>
+    <h1>仰望 <em>U9</em> · 3D 拆解可视化</h1>
+    <div class="sub">纯电超级跑车 · 易四方四电机独立驱动 · 蝴蝶门 · 云辇-X · 主动空力套件<br/>横截面放样建模，1 单位 = 1 米（4966×2029×1295 mm）</div>
+  </div>
+  <div class="badges">
+    <div class="badge orange"><b>960 kW</b>系统功率</div>
+    <div class="badge orange"><b>1680 N·m</b>峰值扭矩</div>
+    <div class="badge"><b>2.36 s</b>0–100km/h</div>
+    <div class="badge"><b>300 km/h</b>官方极速</div>
+    <div class="badge"><b>80 kWh</b>刀片电池</div>
+    <div class="badge"><b>四电机</b>易四方 e⁴</div>
+  </div>
+</header>
+
+<div id="toolbar">
+  <button class="tb" id="btn-explode-all"><span class="ic">🔩</span>全部拆解</button>
+  <button class="tb" id="btn-reset-all"><span class="ic">↺</span>全部复位</button>
+  <button class="tb" id="btn-doors"><span class="ic">🚪</span>开启蝴蝶门</button>
+  <button class="tb active" id="btn-labels"><span class="ic">🏷</span>标注</button>
+  <button class="tb active" id="btn-rotate"><span class="ic">⟳</span>自动旋转</button>
+  <button class="tb" id="btn-wire"><span class="ic">◻</span>线框</button>
+</div>
+
+<aside class="panel" id="panel-left">
+  <div class="panel-head"><span>部件清单</span><span class="count" id="parts-count"></span></div>
+  <div id="parts-list"></div>
+</aside>
+
+<aside class="panel" id="panel-right">
+  <div class="panel-head"><span>部件详情</span><span class="count" id="detail-state">未选择</span></div>
+  <div id="detail">
+    <div class="d-empty"><span class="ico">🔍</span>点击画面中的部件<br/>或左侧清单，查看参数详情<br/>并触发拆解动画</div>
+  </div>
+</aside>
+
+<div id="labels"></div>
+
+<footer id="hint">
+  <span><b>左键</b> 旋转视角</span><span class="sep"></span>
+  <span><b>滚轮</b> 缩放</span><span class="sep"></span>
+  <span><b>右键</b> 平移</span><span class="sep"></span>
+  <span><b>点击部件</b> 拆解 / 详情</span>
+</footer>
+<div id="foot-note">数据参考仰望官方与公开资料 · 极速记录 391.94 km/h（德国 ATP 赛道） · 实际以官方为准</div>
+
+<div id="loading"><div class="ring"></div><p>LOADING · 仰望 U9</p></div>
+<div id="err"><div class="box"><h2>Three.js 加载失败</h2><p>请检查网络连接后刷新页面。<br/>本页面需要加载 Three.js 运行库（已内置本地副本）。</p></div></div>
+
+<script src="three.min.js"></script>
+<script>if (typeof THREE === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"><\/script>');</script>
+
+<script>
+/* =========================================================================
+   仰望 U9 · 3D 拆解可视化（v3）
+   - 车身：横截面放样（loft），车头车尾收窄 + 轮拱开口，真实比例
+   - 1 场景单位 = 1 米；4966×2029×1295 mm，轴距 2900，轮距 1719/1676
+   ========================================================================= */
+(function () {
+  'use strict';
+  if (typeof THREE === 'undefined') {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('err').style.display = 'flex';
+    return;
+  }
+
+  const HEX = c => '#' + c.toString(16).padStart(6, '0');
+  const RGBA = (hex, a) => { const r=(hex>>16)&255,g=(hex>>8)&255,b=hex&255; return 'rgba('+r+','+g+','+b+','+a+')'; };
+  const _v1 = new THREE.Vector3();
+  const _v2 = new THREE.Vector3();
+
+  const state = { selected:null, hovered:null, exploded:{}, labelsVisible:true, wireframe:false };
+
+  /* ----------------------------- 渲染器 / 场景 ----------------------------- */
+  const container = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x04060c);
+  scene.fog = new THREE.Fog(0x04060c, 20, 70);
+  const camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 300);
+  camera.position.set(8.2, 4.4, 9.2);
+
+  scene.add(new THREE.HemisphereLight(0x8fb7ff, 0x07090f, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(6,11,5); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x7fb2ff, 0.5); fill.position.set(-6,3,-4); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xff7a2f, 0.55); rim.position.set(-2,1.5,-9); scene.add(rim);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  (function buildEnv(){
+    const env = new THREE.Scene(); env.background = new THREE.Color(0x0a0d14);
+    const panel = (w,h,color,pos)=>{ const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color})); m.position.copy(pos); m.lookAt(0,0,0); env.add(m); };
+    panel(16,7,new THREE.Color(1.6,1.6,1.7),new THREE.Vector3(0,9,0));
+    panel(9,9,new THREE.Color(0.7,1.0,1.6),new THREE.Vector3(9,3,7));
+    panel(9,9,new THREE.Color(1.6,0.9,0.65),new THREE.Vector3(-9,3,-5));
+    panel(12,6,new THREE.Color(0.5,0.6,0.8),new THREE.Vector3(0,1,11));
+    scene.environment = pmrem.fromScene(env, 0.06).texture;
+  })();
+
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140,140), new THREE.MeshStandardMaterial({ color:0x0a0e15, metalness:0.5, roughness:0.9 }));
+  floor.rotation.x = -Math.PI/2; scene.add(floor);
+  const grid = new THREE.GridHelper(90,90,0x2a3a4e,0x101a26); grid.position.y = 0.004; scene.add(grid);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(4.0,0.012,8,160), new THREE.MeshBasicMaterial({ color:0x2bd7ff, transparent:true, opacity:0.32, blending:THREE.AdditiveBlending, depthWrite:false }));
+  ring.rotation.x = -Math.PI/2; ring.position.y = 0.01; scene.add(ring);
+
+  (function softShadow(){
+    const c = document.createElement('canvas'); c.width=c.height=256;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(128,128,10,128,128,128);
+    g.addColorStop(0,'rgba(0,0,0,0.9)'); g.addColorStop(0.55,'rgba(0,0,0,0.45)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,256,256);
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(9.5,7), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false }));
+    sh.rotation.x = -Math.PI/2; sh.position.y = 0.008; scene.add(sh);
+  })();
+
+  (function particles(){
+    const n=280, pos=new Float32Array(n*3);
+    for(let i=0;i<n;i++){ pos[i*3]=(Math.random()-0.5)*44; pos[i*3+1]=Math.random()*15+0.2; pos[i*3+2]=(Math.random()-0.5)*44; }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+    const mat = new THREE.PointsMaterial({ color:0x2bd7ff, size:0.035, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false });
+    scene.add(new THREE.Points(geo, mat));
+  })();
+
+  /* ----------------------------- OrbitControls ----------------------------- */
+  class OrbitControls {
+    constructor(camera, dom, target){
+      this.camera=camera; this.dom=dom; this.target=target.clone();
+      this.minDistance=3.4; this.maxDistance=24; this.minPolar=0.16; this.maxPolar=Math.PI*0.54;
+      this.autoRotate=true; this.autoRotateSpeed=0.32; this.onInteract=null;
+      const off = camera.position.clone().sub(this.target);
+      this.sph = new THREE.Spherical().setFromVector3(off); this._drag=null;
+      dom.addEventListener('pointerdown', e=>this._down(e));
+      window.addEventListener('pointermove', e=>this._move(e));
+      window.addEventListener('pointerup', e=>this._up(e));
+      dom.addEventListener('wheel', e=>this._wheel(e), { passive:false });
+      dom.addEventListener('contextmenu', e=>e.preventDefault());
+    }
+    _down(e){ this._drag={x:e.clientX,y:e.clientY,button:e.button}; this.dom.style.cursor=(e.button===0)?'grabbing':'move'; if(this.autoRotate){ this.autoRotate=false; if(this.onInteract) this.onInteract(); } }
+    _move(e){ if(!this._drag) return; const dx=e.clientX-this._drag.x, dy=e.clientY-this._drag.y; this._drag.x=e.clientX; this._drag.y=e.clientY;
+      if(this._drag.button===2 || this._drag.button===1){ const s=this.sph.radius*0.0017; const right=_v1.set(1,0,0).applyQuaternion(this.camera.quaternion); const up=_v2.set(0,1,0).applyQuaternion(this.camera.quaternion); this.target.addScaledVector(right,-dx*s).addScaledVector(up,dy*s); }
+      else { this.sph.theta -= dx*0.0055; this.sph.phi = Math.max(this.minPolar, Math.min(this.maxPolar, this.sph.phi - dy*0.0055)); } }
+    _up(){ this._drag=null; this.dom.style.cursor=''; }
+    _wheel(e){ e.preventDefault(); this.sph.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.sph.radius*Math.exp(e.deltaY*0.001))); }
+    update(dt){ if(this.autoRotate && !this._drag) this.sph.theta += this.autoRotateSpeed*dt; this.camera.position.copy(this.target).add(new THREE.Vector3().setFromSpherical(this.sph)); this.camera.lookAt(this.target); }
+  }
+  const controls = new OrbitControls(camera, renderer.domElement, new THREE.Vector3(0,0.6,0));
+  controls.onInteract = () => { document.getElementById('btn-rotate').classList.remove('active'); };
+
+  /* ----------------------------- 材质 ----------------------------- */
+  function std(color, opts){
+    opts = opts||{};
+    const m = new THREE.MeshStandardMaterial({ color, metalness:opts.metalness!=null?opts.metalness:0.3, roughness:opts.roughness!=null?opts.roughness:0.5 });
+    if(opts.emissive!=null){ m.emissive=new THREE.Color(opts.emissive); m.emissiveIntensity = opts.emissiveIntensity!=null?opts.emissiveIntensity:1; }
+    if(opts.side) m.side = opts.side;
+    return m;
+  }
+  function paint(color){ return new THREE.MeshPhysicalMaterial({ color, metalness:0.55, roughness:0.24, clearcoat:1, clearcoatRoughness:0.12 }); }
+
+  /* ----------------------------- 数据 ----------------------------- */
+  const PARTS = [
+    { id:'body', name:'车身外壳', en:'Carbon Body Shell', accent:0xff7a2f, tag:'外观',
+      params:[['车身材质','碳纤维单体壳'],['长/宽/高','4966 × 2029 × 1295 mm'],['轴距','2900 mm'],['前/后轮距','1719 / 1676 mm'],['整备质量','2475 kg']],
+      desc:'低重心碳纤维单体壳车身，流线型空气动力学设计，配合主动尾翼与主动扩散器在高速时提供强大下压力。' },
+    { id:'doors', name:'蝴蝶门 ×2', en:'Butterfly Doors', accent:0xff8c1a, tag:'外观',
+      params:[['车门数','2 门 2 座'],['开启方式','蝴蝶门（向上翻转）'],['车门材质','碳纤维'],['特色','剪刀式上扬 · 仪式感']],
+      desc:'仰望 U9 标志性的蝴蝶门，向上翻转开启，极具仪式感。点击「开启蝴蝶门」或该部件可观看开合动画。' },
+    { id:'wing', name:'主动尾翼', en:'Active Rear Wing', accent:0xff7a2f, tag:'空力',
+      params:[['类型','主动可调式尾翼'],['材质','碳纤维'],['功能','高速下压力 / 制动辅助'],['调节','多角度自适应']],
+      desc:'大型主动尾翼随车速与驾驶模式自动升降、调节角度，在高速与制动时提供额外下压力。' },
+    { id:'diffuser', name:'主动扩散器', en:'Active Diffuser', accent:0x2bd7ff, tag:'空力',
+      params:[['类型','主动可调扩散器'],['功能','梳理车尾气流'],['作用','提升尾部下压力'],['联动','与主动尾翼协同']],
+      desc:'主动扩散器自动调节角度，梳理底部气流、提升尾部下压力，与主动尾翼协同构成主动空气动力学系统。' },
+    { id:'frontMotors', name:'前电机组 ×2', en:'Front E-Motors', accent:0xff8c1a, tag:'动力',
+      params:[['电机类型','永磁同步电机'],['前轴总功率','480 kW'],['前轴总扭矩','840 N·m'],['单电机','240 kW / 420 N·m']],
+      desc:'前轴两台永磁同步电机独立驱动左右前轮，毫秒级扭矩矢量控制。U9 为纯电超跑，无传统发动机。' },
+    { id:'rearMotors', name:'后电机组 ×2', en:'Rear E-Motors', accent:0xff8c1a, tag:'动力',
+      params:[['后轴总功率','480 kW'],['后轴总扭矩','840 N·m'],['系统总功率','960 kW'],['系统总扭矩','1680 N·m']],
+      desc:'后轴两台电机与前轴协同，四电机独立驱动输出 960 kW / 1680 N·m，0–100 km/h 仅 2.36 秒。' },
+    { id:'domainController', name:'智能域控制器', en:'Domain Controller', accent:0x3dff9e, tag:'电子电气',
+      params:[['架构','中央计算 + 域控'],['集成','智驾 / 座舱 / 车身域'],['通信','车载以太网 + CAN'],['定位','整车大脑']],
+      desc:'高度集成的智能域控制器，统筹智能驾驶、智能座舱与车身控制，是整车电子电气架构的核心。' },
+    { id:'battery', name:'刀片电池', en:'Blade Battery', accent:0x2bd7ff, tag:'能源',
+      params:[['类型','磷酸铁锂刀片电池'],['电芯品牌','弗迪电池'],['容量','80 kWh'],['续航','CLTC 450 km'],['快充','500 kW · 30-80% 10min']],
+      desc:'比亚迪刀片电池，针刺不起火，平铺于底盘中部；800V 高压平台支持 500 kW 极速快充。' },
+    { id:'chassis', name:'碳纤维底盘', en:'Carbon Chassis', accent:0x9aa8ff, tag:'底盘',
+      params:[['结构','碳纤维单体壳底盘'],['前悬架','双横臂式独立悬架'],['后悬架','多连杆式独立悬架'],['控制','云辇-X 智能车身控制']],
+      desc:'轻量化碳纤维底盘，集成电池包与四电机，极低重心、超高扭转刚度，配合云辇-X 可原地起跳。' },
+    { id:'suspension', name:'云辇-X 悬架', en:'DiSus-X Suspension', accent:0x2bd7ff, tag:'底盘',
+      params:[['系统','云辇-X 智能车身控制'],['前悬架','双横臂式独立悬架'],['后悬架','多连杆式独立悬架'],['特色','原地起跳 · 三轮行驶 · 跳舞']],
+      desc:'云辇-X 毫秒级调节悬架姿态，赋予仰望 U9 原地起跳、三轮行驶等惊人能力。' },
+    { id:'wheels', name:'车轮组 ×4', en:'Wheels', accent:0xffcf5a, tag:'行走',
+      params:[['轮毂','21 英寸锻造轮毂'],['前轮胎','275/35 R21'],['后轮胎','325/30 R21'],['制动','前后陶瓷通风盘式']],
+      desc:'前后胎宽差异化（275 / 325），配合 21 英寸锻造轮毂与碳陶瓷通风盘制动，四轮独立驱动。' }
+  ];
+
+  /* ----------------------------- 部件容器 / 段管理 ----------------------------- */
+  const carGroup = new THREE.Group(); scene.add(carGroup);
+  const parts = {};
+  function addPart(id){ parts[id] = { id, def:PARTS.find(p=>p.id===id), segments:[], glowMats:[], labelTarget:null, labelOffset:new THREE.Vector3(), glow:null }; return parts[id]; }
+  function makeLeader(restPos, color){ const geo=new THREE.BufferGeometry().setFromPoints([restPos.clone(), restPos.clone()]); const mat=new THREE.LineBasicMaterial({ color, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }); const line=new THREE.Line(geo,mat); line.visible=false; return line; }
+  function addSegment(part, obj, restPos, explodePos, explodeRot){
+    obj.position.copy(restPos); obj.userData.partId = part.id;
+    const line = makeLeader(restPos, part.def.accent); carGroup.add(line); carGroup.add(obj);
+    part.segments.push({ obj, restPos:restPos.clone(), explodePos:explodePos.clone(), restRot:0, explodeRot:explodeRot||0, line });
+    return obj;
+  }
+  function highlightable(part, mats, accent){ for(const m of mats){ m.userData.baseE=m.emissive.clone(); m.userData.baseI=m.emissiveIntensity; part.glowMats.push({ mat:m, accent:new THREE.Color(accent) }); } }
+
+  /* =========================================================================
+     横截面放样（loft）工具
+     每个站点 {x, w(半宽), h(冠高/中线顶高), s(肩高), sb(侧壁底高)}
+     截面：中线顶 → cos 圆角到肩线 → 侧壁下到 sb → 底部横穿 → 另一侧镜像
+     ========================================================================= */
+  function loftGeometry(stations, K){
+    K = K || 8;
+    const N = 2*K + 4;           // 每站顶点数
+    const verts = [];
+    for(const st of stations){
+      const w = st.w, h = st.h, s = st.s, sb = (st.sb!=null ? st.sb : 0.15);
+      const row = [];
+      row.push([0, h]);                                   // 0 中线顶
+      for(let i=1;i<=K;i++){ const t=i/K; row.push([w*t, s+(h-s)*Math.cos(t*Math.PI/2)]); } // 1..K 右顶
+      row.push([w, sb]);                                  // K+1 右侧底
+      row.push([-w, sb]);                                 // K+2 左侧底
+      row.push([-w, s]);                                  // K+3 左肩
+      for(let i=K-1;i>=0;i--){ const t=i/K; row.push([-w*t, s+(h-s)*Math.cos(t*Math.PI/2)]); } // K+4..2K+3 左顶
+      for(const [z,y] of row) verts.push(st.x, y, z);
+    }
+    const indices = [];
+    const rows = stations.length;
+    for(let r=0;r<rows-1;r++){
+      for(let j=0;j<N;j++){
+        const j2=(j+1)%N;
+        const a=r*N+j, b=r*N+j2, c=(r+1)*N+j2, d=(r+1)*N+j;
+        indices.push(a,b,c, a,c,d);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }
+  /* 轮拱侧壁底高：半圆形开口 */
+  function archSideBottom(x){
+    const rb = 0.15, yw = 0.34, R = 0.44, wheels = [1.45, -1.45];
+    let sb = rb;
+    for(const xw of wheels){
+      const d = Math.abs(x - xw);
+      if(d < R){ const top = yw + Math.sqrt(R*R - d*d); sb = Math.max(sb, top); }
+    }
+    return sb;
+  }
+
+  /* 车身横截面站点（后 → 前） */
+  function bodyStations(){
+    const raw = [
+      [-2.48, 0.72, 0.55, 0.50], [-2.38, 0.86, 0.58, 0.52], [-2.24, 0.95, 0.62, 0.56], [-2.06, 1.00, 0.66, 0.60],
+      [-1.92, 1.02, 0.70, 0.64], [-1.78, 1.02, 0.74, 0.70], [-1.62, 1.00, 0.78, 0.76], [-1.45, 1.00, 0.80, 0.80],
+      [-1.32, 0.99, 0.78, 0.74], [-1.16, 0.98, 0.82, 0.78], [-1.05, 0.97, 0.86, 0.82], [-0.82, 0.95, 0.88, 0.84],
+      [-0.55, 0.93, 0.89, 0.85], [-0.28, 0.92, 0.89, 0.85], [-0.02, 0.91, 0.89, 0.85], [ 0.24, 0.91, 0.89, 0.85],
+      [ 0.50, 0.92, 0.88, 0.84], [ 0.74, 0.94, 0.86, 0.82], [ 0.98, 0.96, 0.82, 0.78], [ 1.18, 0.98, 0.78, 0.75],
+      [ 1.32, 1.00, 0.80, 0.78], [ 1.45, 1.00, 0.80, 0.80], [ 1.62, 0.99, 0.74, 0.71], [ 1.82, 0.95, 0.66, 0.63],
+      [ 2.04, 0.86, 0.58, 0.55], [ 2.26, 0.68, 0.50, 0.47], [ 2.42, 0.46, 0.44, 0.41], [ 2.48, 0.30, 0.38, 0.36]
+    ];
+    return raw.map(r => { const st = { x:r[0], w:r[1], h:r[2], s:r[3] }; st.sb = Math.min(archSideBottom(r[0]), r[3]-0.02); return st; });
+  }
+  /* 座舱盖（玻璃）站点 */
+  function canopyStations(){
+    const raw = [
+      [-1.05, 0.76, 0.86, 0.86], [-0.86, 0.75, 0.98, 0.86], [-0.63, 0.74, 1.12, 0.86], [-0.39, 0.73, 1.20, 0.86],
+      [-0.13, 0.73, 1.23, 0.86], [ 0.13, 0.73, 1.23, 0.86], [ 0.39, 0.74, 1.18, 0.86], [ 0.63, 0.75, 1.08, 0.86],
+      [ 0.86, 0.76, 0.98, 0.86], [ 1.05, 0.76, 0.86, 0.86]
+    ];
+    return raw.map(r => ({ x:r[0], w:r[1], h:r[2], s:r[3], sb:r[3] }));
+  }
+
+  /* ----------------------------- 各部件 ----------------------------- */
+  function buildBody(){
+    const part = addPart('body');
+    const g = new THREE.Group();
+    const paintMat = paint(0xe83a12); paintMat.side = THREE.DoubleSide;
+    const glassMat = new THREE.MeshPhysicalMaterial({ color:0x070b12, metalness:0.9, roughness:0.06, clearcoat:1, clearcoatRoughness:0.08, side:THREE.DoubleSide });
+    const darkMat = std(0x11151c, { metalness:0.7, roughness:0.4 });
+    const accentMat = std(0x11151c, { metalness:0.5, roughness:0.5, emissive:0xff7a2f, emissiveIntensity:1.6 });
+
+    // 主体（放样）+ 座舱盖（放样）
+    g.add(new THREE.Mesh(loftGeometry(bodyStations(), 8), paintMat));
+    g.add(new THREE.Mesh(loftGeometry(canopyStations(), 6), glassMat));
+
+    // 前唇
+    const splitter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.05, 1.6), darkMat);
+    splitter.position.set(2.25, 0.1, 0); g.add(splitter);
+    // 侧裙
+    for(const z of [-0.95, 0.95]){ const skirt = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.07, 0.12), darkMat); skirt.position.set(0, 0.14, z); g.add(skirt); }
+    // 头灯（前脸狭长灯组）
+    for(const z of [-0.42, 0.42]){ const hl = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.5), new THREE.MeshBasicMaterial({ color:0xdff4ff })); hl.position.set(2.2, 0.44, z); hl.rotation.y = 0.12; g.add(hl); }
+    // 贯穿式日行灯
+    const drl = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.026, 1.1), new THREE.MeshBasicMaterial({ color:0x8fe0ff })); drl.position.set(2.32, 0.4, 0); g.add(drl);
+    // 贯穿式尾灯
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 1.44), new THREE.MeshBasicMaterial({ color:0xff2438 })); tail.position.set(-2.44, 0.52, 0); g.add(tail);
+    // 甲骨文「电」徽标点
+    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.05), new THREE.MeshBasicMaterial({ color:0xffc36a })); badge.position.set(2.28, 0.5, 0); g.add(badge);
+    // 后视镜
+    for(const z of [-0.82, 0.82]){ const mir = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.1), paintMat); mir.position.set(0.98, 1.02, z); g.add(mir); }
+    // 侧进气口（后轮前方）
+    for(const z of [-0.86, 0.86]){ const duct = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.28, 0.22), darkMat); duct.position.set(-1.85, 0.5, z); g.add(duct); }
+    // 侧进气发光条
+    for(const z of [-0.86, 0.86]){ const sl = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.22), accentMat); sl.position.set(-1.85, 0.64, z); g.add(sl); }
+
+    addSegment(part, g, new THREE.Vector3(0,0,0), new THREE.Vector3(0,2.7,0));
+    highlightable(part, [paintMat], 0xff7a2f);
+    part.labelTarget = g; part.labelOffset.set(0, 1.5, 0);
+    return part;
+  }
+
+  function buildDoors(){
+    const part = addPart('doors');
+    const accent = 0xff8c1a;
+    const doorMat = paint(0xdf3711); doorMat.side = THREE.DoubleSide;
+    const glassMat = new THREE.MeshPhysicalMaterial({ color:0x0a0e16, metalness:0.9, roughness:0.07, clearcoat:1, clearcoatRoughness:0.1, side:THREE.DoubleSide });
+    const accentMat = std(0x14171d, { metalness:0.5, roughness:0.4, emissive:accent, emissiveIntensity:1.5 });
+    function door(side){
+      const dg = new THREE.Group();
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.6, 0.05), doorMat); panel.position.y = -0.3; dg.add(panel);
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.2, 0.06), glassMat); win.position.y = -0.12; dg.add(win);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.024, 0.06), accentMat); strip.position.y = -0.56; dg.add(strip);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 0.04), std(0x333944, { metalness:0.85, roughness:0.3 })); arm.position.set(0,-0.05, side*0.05); dg.add(arm);
+      return dg;
+    }
+    const segL = new THREE.Group(); segL.add(door(-1)); segL.position.set(0.1, 1.18, -0.93);
+    const segR = new THREE.Group(); segR.add(door(1)); segR.position.set(0.1, 1.18, 0.93);
+    addSegment(part, segL, new THREE.Vector3(0.1,1.18,-0.93), new THREE.Vector3(0.1,1.26,-0.98), 2.1);
+    addSegment(part, segR, new THREE.Vector3(0.1,1.18,0.93), new THREE.Vector3(0.1,1.26,0.98), -2.1);
+    highlightable(part, [doorMat], accent);
+    part.labelTarget = segL; part.labelOffset.set(0, 0, 0.6);
+    return part;
+  }
+
+  function buildWing(){
+    const part = addPart('wing');
+    const g = new THREE.Group();
+    const carbon = std(0x161a22, { metalness:0.6, roughness:0.4, emissive:0xff7a2f, emissiveIntensity:0.25 });
+    const edge = std(0x1a1e26, { metalness:0.5, roughness:0.5, emissive:0xff7a2f, emissiveIntensity:1.3 });
+    const plane = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 1.85), carbon); plane.rotation.z = -0.14; g.add(plane);
+    const plane2 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.03, 1.7), carbon); plane2.position.set(0.12,-0.07,0); plane2.rotation.z=-0.14; g.add(plane2);
+    for(const z of [-0.56, 0.56]){ const u = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.26, 0.09), carbon); u.position.set(0,-0.24,z); g.add(u); }
+    for(const z of [-0.93, 0.93]){ const ep = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.04), carbon); ep.position.set(0,-0.05,z); g.add(ep); const el=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.02,0.05), edge); el.position.set(0,-0.15,z); g.add(el); }
+    addSegment(part, g, new THREE.Vector3(-2.12, 0.86, 0), new THREE.Vector3(-2.6, 1.65, 0));
+    highlightable(part, [carbon], 0xff7a2f);
+    part.labelTarget = g; part.labelOffset.set(0, 0.36, 0);
+    return part;
+  }
+
+  function buildDiffuser(){
+    const part = addPart('diffuser');
+    const g = new THREE.Group();
+    const accent = 0x2bd7ff;
+    const carbon = std(0x14181f, { metalness:0.6, roughness:0.4, emissive:accent, emissiveIntensity:0.35 });
+    const glow = std(0x10151c, { metalness:0.5, roughness:0.5, emissive:accent, emissiveIntensity:1.5 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 1.7), carbon); base.position.set(0,0.05,0); g.add(base);
+    for(const z of [-0.65,-0.3,0,0.3,0.65]){ const fin = new THREE.Mesh(new THREE.BoxGeometry(0.52,0.16,0.03), carbon); fin.position.set(0,0.14,z); g.add(fin); }
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.02,1.7), glow); bar.position.set(0,0.02,0); g.add(bar);
+    addSegment(part, g, new THREE.Vector3(-2.56, 0.18, 0), new THREE.Vector3(-3.3, 0.5, 0));
+    highlightable(part, [carbon], accent);
+    part.labelTarget = g; part.labelOffset.set(0, 0.3, 0);
+    return part;
+  }
+
+  function buildMotorUnit(accent, flip){
+    const g = new THREE.Group();
+    const metal = std(0x3a414b, { metalness:0.85, roughness:0.35 });
+    const dark = std(0x14171d, { metalness:0.7, roughness:0.5 });
+    const glow = std(0x20252c, { metalness:0.5, roughness:0.4, emissive:accent, emissiveIntensity:1.7 });
+    const shaftMat = std(0x90979f, { metalness:0.9, roughness:0.2 });
+    const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.36,28), metal); housing.rotation.x = Math.PI/2; g.add(housing);
+    for(const z of [0, 0.18]){ const r = new THREE.Mesh(new THREE.TorusGeometry(0.19,0.027,12,40), glow); r.position.z = z; g.add(r); }
+    const gb = new THREE.Mesh(new THREE.BoxGeometry(0.21,0.25,0.19), dark); gb.position.set(0,0.02,0.29); g.add(gb);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.32,12), shaftMat); shaft.rotation.x = Math.PI/2; shaft.position.z = 0.54; g.add(shaft);
+    const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.03,16), metal); flange.rotation.x = Math.PI/2; flange.position.z = 0.71; g.add(flange);
+    const br = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.05,0.21), dark); br.position.y = 0.22; g.add(br);
+    if(flip) g.rotation.y = Math.PI;
+    return { g, mats:[metal, glow] };
+  }
+  function buildMotors(id, xRest, xExplode){
+    const part = addPart(id);
+    const accent = 0xff8c1a;
+    const uL = buildMotorUnit(accent, true), uR = buildMotorUnit(accent, false);
+    const segL = new THREE.Group(); segL.add(uL.g);
+    const segR = new THREE.Group(); segR.add(uR.g);
+    addSegment(part, segL, new THREE.Vector3(xRest,0.4,-0.5), new THREE.Vector3(xExplode,1.15,-0.9));
+    addSegment(part, segR, new THREE.Vector3(xRest,0.4,0.5), new THREE.Vector3(xExplode,1.15,0.9));
+    highlightable(part, uL.mats.concat(uR.mats), accent);
+    part.labelTarget = segL; part.labelOffset.set(0, 0.5, 0.4);
+    return part;
+  }
+
+  function buildDomain(){
+    const part = addPart('domainController');
+    const g = new THREE.Group();
+    const accent = 0x3dff9e;
+    const pcb = std(0x0c2b1c, { metalness:0.3, roughness:0.55 });
+    const chip = std(0x11151b, { metalness:0.6, roughness:0.4 });
+    const trace = std(0x0a0a0a, { metalness:0.2, roughness:0.5, emissive:accent, emissiveIntensity:1.7 });
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.58,0.06,0.44), pcb); g.add(board);
+    const chip1 = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.05,0.14), chip); chip1.position.set(-0.13,0.055,0.08); g.add(chip1);
+    const chip2 = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.04,0.18), chip); chip2.position.set(0.14,0.05,-0.09); g.add(chip2);
+    for(let i=0;i<6;i++){ const f=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.045,0.02), std(0x3c4550,{metalness:0.9,roughness:0.3})); f.position.set(0.14,0.1,-0.18+i*0.036); g.add(f); }
+    for(let i=0;i<5;i++){ const t=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.012,0.012), trace); t.position.set(0,0.035,-0.13+i*0.064); g.add(t); }
+    const port = new THREE.Mesh(new THREE.BoxGeometry(0.52,0.06,0.05), std(0x151a20,{metalness:0.7,roughness:0.4})); port.position.set(0,0,0.23); g.add(port);
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.015,0.06), trace); led.position.set(-0.21,0.032,0.05); g.add(led);
+    addSegment(part, g, new THREE.Vector3(0.15,0.52,0.1), new THREE.Vector3(0.55,2.1,0.35));
+    highlightable(part, [pcb, chip], accent);
+    part.labelTarget = g; part.labelOffset.set(0, 0.32, 0);
+    return part;
+  }
+
+  function buildBattery(){
+    const part = addPart('battery');
+    const g = new THREE.Group();
+    const accent = 0x2bd7ff;
+    const caseMat = std(0x1b2430, { metalness:0.7, roughness:0.35 });
+    const cell = std(0x0c141c, { metalness:0.4, roughness:0.5, emissive:accent, emissiveIntensity:1.5 });
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(2.75,0.16,1.4), caseMat); g.add(pack);
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(2.75,0.03,1.4), std(0x232c38,{metalness:0.6,roughness:0.4})); cover.position.y=0.095; g.add(cover);
+    for(let i=0;i<6;i++){ const c=new THREE.Mesh(new THREE.BoxGeometry(2.45,0.012,0.07), cell); c.position.set(0,0.12,-0.52+i*0.208); g.add(c); }
+    const bms = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.12,0.32), std(0x0f141a,{metalness:0.7,roughness:0.4,emissive:accent,emissiveIntensity:0.8})); bms.position.set(1.25,0.1,0); g.add(bms);
+    addSegment(part, g, new THREE.Vector3(0,0.1,0), new THREE.Vector3(0.6,1.25,0));
+    highlightable(part, [caseMat], accent);
+    part.labelTarget = g; part.labelOffset.set(0, 0.32, 0);
+    return part;
+  }
+
+  function buildChassis(){
+    const part = addPart('chassis');
+    const g = new THREE.Group();
+    const accent = 0x9aa8ff;
+    const carbon = std(0x1a1e27, { metalness:0.5, roughness:0.5, emissive:accent, emissiveIntensity:0.18 });
+    const frame = std(0x242a36, { metalness:0.6, roughness:0.45 });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(4.6,0.12,1.72), carbon); g.add(plate);
+    for(const x of [-1.8,1.8]){ const sub=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.1,1.52), frame); sub.position.set(x,0,0); g.add(sub); }
+    const tunnel = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.1,0.42), frame); g.add(tunnel);
+    for(const z of [-0.8,0.8]){ const rail=new THREE.Mesh(new THREE.BoxGeometry(4.6,0.08,0.1), frame); rail.position.set(0,0,z); g.add(rail); }
+    for(const x of [-2.0,2.0]){ const cross=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.08,1.72), frame); cross.position.set(x,0,0); g.add(cross); }
+    addSegment(part, g, new THREE.Vector3(0,0.18,0), new THREE.Vector3(0,0.1,0));
+    highlightable(part, [carbon], accent);
+    part.labelTarget = g; part.labelOffset.set(1.6, 0.34, 0);
+    return part;
+  }
+
+  function buildSuspension(){
+    const part = addPart('suspension');
+    const accent = 0x2bd7ff;
+    const armMat = std(0x2a303a, { metalness:0.7, roughness:0.4 });
+    const springMat = std(0xc9d2dd, { metalness:0.9, roughness:0.2 });
+    const glow = std(0x1a1f26, { metalness:0.5, roughness:0.4, emissive:accent, emissiveIntensity:1.5 });
+    function strut(multiLink){
+      const s = new THREE.Group();
+      const damper = new THREE.Mesh(new THREE.CylinderGeometry(0.048,0.048,0.32,16), springMat); damper.position.y=0.17; s.add(damper);
+      for(let i=0;i<3;i++){ const sp=new THREE.Mesh(new THREE.TorusGeometry(0.095,0.02,8,24), glow); sp.position.y=0.06+i*0.06; s.add(sp); }
+      const mount = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.04,0.15), armMat); mount.position.y=0.34; s.add(mount);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.58,0.04,0.06), armMat); arm.position.set(0.17,0.02,0); arm.rotation.z=-0.18; s.add(arm);
+      if(multiLink){ const l2=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.03,0.05), armMat); l2.position.set(0.05,0.06,0); l2.rotation.z=0.12; s.add(l2); }
+      return s;
+    }
+    const corners = [[1.45,0.32,-0.62],[1.45,0.32,0.62],[-1.45,0.32,-0.62],[-1.45,0.32,0.62]];
+    const expl = [[1.45,1.05,-0.82],[1.45,1.05,0.82],[-1.45,1.05,-0.82],[-1.45,1.05,0.82]];
+    for(let i=0;i<4;i++){ const seg=new THREE.Group(); seg.add(strut(i>=2)); addSegment(part, seg, new THREE.Vector3(...corners[i]), new THREE.Vector3(...expl[i])); }
+    highlightable(part, [armMat], accent);
+    part.labelTarget = part.segments[0].obj; part.labelOffset.set(0, 0.6, 0.35);
+    return part;
+  }
+
+  function buildWheels(){
+    const part = addPart('wheels');
+    const accent = 0xffcf5a;
+    const tireMat = std(0x0a0a0d, { metalness:0.1, roughness:0.85 });
+    const rimMat = std(0xb9bec7, { metalness:0.9, roughness:0.2 });
+    const spokeMat = std(0x6f7680, { metalness:0.9, roughness:0.25 });
+    function wheel(tireWidth){
+      const g = new THREE.Group();
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,tireWidth,40), tireMat); tire.rotation.x=Math.PI/2; g.add(tire);
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,tireWidth+0.02,24), rimMat); rim.rotation.x=Math.PI/2; g.add(rim);
+      for(let i=0;i<5;i++){ const a=i/5*Math.PI*2; const sp=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.21,tireWidth+0.02), spokeMat); sp.position.set(Math.cos(a)*0.1, Math.sin(a)*0.1, 0); sp.rotation.z=a; g.add(sp); }
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,tireWidth+0.04,16), spokeMat); hub.rotation.x=Math.PI/2; g.add(hub);
+      const cal = new THREE.Mesh(new THREE.BoxGeometry(0.17,0.1,0.08), std(0xff4d2e,{metalness:0.4,roughness:0.4,emissive:accent,emissiveIntensity:0.5})); cal.position.set(0.14,-0.06,0.1); g.add(cal);
+      return g;
+    }
+    const defs = [[1.45,0.34,-0.86,0.28],[1.45,0.34,0.86,0.28],[-1.45,0.34,-0.84,0.32],[-1.45,0.34,0.84,0.32]];
+    for(const d of defs){ const out = d[2]<0 ? -1.0 : 1.0; const seg=new THREE.Group(); seg.add(wheel(d[3])); addSegment(part, seg, new THREE.Vector3(d[0],d[1],d[2]), new THREE.Vector3(d[0],d[1]+0.05,d[2]+out)); }
+    highlightable(part, [rimMat], accent);
+    part.labelTarget = part.segments[0].obj; part.labelOffset.set(0, 0.66, 0);
+    return part;
+  }
+
+  /* ----------------------------- 组装 ----------------------------- */
+  buildBody();
+  buildDoors();
+  buildWing();
+  buildDiffuser();
+  buildMotors('frontMotors', 1.45, 3.1);
+  buildMotors('rearMotors', -1.45, -3.1);
+  buildDomain();
+  buildBattery();
+  buildChassis();
+  buildSuspension();
+  buildWheels();
+
+  const pickableList = Object.values(parts).reduce((a,p)=>a.concat(p.segments.map(s=>s.obj)), []);
+
+  function makeGlow(color){
+    const c = document.createElement('canvas'); c.width=c.height=128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0, RGBA(color,0.85)); g.addColorStop(0.4, RGBA(color,0.32)); g.addColorStop(1, RGBA(color,0));
+    ctx.fillStyle=g; ctx.fillRect(0,0,128,128);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0 }));
+    spr.scale.set(1.7,1.7,1); spr.visible=false; carGroup.add(spr); return spr;
+  }
+  for(const id in parts) parts[id].glow = makeGlow(parts[id].def.accent);
+
+  function applyHighlight(part, level){
+    for(const h of part.glowMats){
+      if(level===0){ h.mat.emissive.copy(h.mat.userData.baseE); h.mat.emissiveIntensity = h.mat.userData.baseI; }
+      else { h.mat.emissive.copy(h.accent); h.mat.emissiveIntensity = h.mat.userData.baseI + (level===2 ? 1.35 : 0.35); }
+    }
+  }
+  function refreshHighlights(){ for(const id in parts){ let lvl=0; if(state.selected===id) lvl=2; else if(state.hovered===id) lvl=1; applyHighlight(parts[id], lvl); } }
+
+  let tweens = [];
+  const easeInOutCubic = x => x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+  function animateTransform(obj, toPos, toRotX, dur, delay){
+    tweens = tweens.filter(t=>t.obj!==obj);
+    tweens.push({ obj, from:obj.position.clone(), to:toPos.clone(), rotFrom:obj.rotation.x, rotTo:toRotX, start:performance.now()+delay*1000, dur:dur*1000 });
+  }
+  function processTweens(){
+    const now = performance.now();
+    tweens = tweens.filter(t=>{
+      if(now < t.start) return true;
+      const p = Math.min(1, (now-t.start)/t.dur); const e = easeInOutCubic(p);
+      t.obj.position.lerpVectors(t.from, t.to, e);
+      t.obj.rotation.x = t.rotFrom + (t.rotTo - t.rotFrom)*e;
+      return p < 1;
+    });
+  }
+  function explodePart(id){ const part=parts[id]; if(state.exploded[id]) return; state.exploded[id]=true; part.segments.forEach((s,i)=>animateTransform(s.obj, s.explodePos, s.explodeRot, 0.95, i*0.09)); }
+  function resetPart(id){ const part=parts[id]; if(!state.exploded[id]) return; state.exploded[id]=false; part.segments.forEach((s,i)=>animateTransform(s.obj, s.restPos, s.restRot, 0.85, i*0.07)); }
+  function explodeAll(){ for(const id in parts) explodePart(id); updateUI(); }
+  function resetAll(){ for(const id in parts) resetPart(id); updateUI(); }
+  function toggleDoors(){ const on = !state.exploded.doors; if(on) explodePart('doors'); else resetPart('doors'); updateUI(); const btn=document.getElementById('btn-doors'); btn.classList.toggle('active', on); btn.innerHTML='<span class="ic">🚪</span>'+(on?'关闭蝴蝶门':'开启蝴蝶门'); }
+
+  /* ----------------------------- UI ----------------------------- */
+  const listEl = document.getElementById('parts-list');
+  const detailEl = document.getElementById('detail');
+  const detailStateEl = document.getElementById('detail-state');
+  const labelsEl = document.getElementById('labels');
+  const labels = {};
+
+  PARTS.forEach(p=>{
+    const row = document.createElement('div'); row.className='row'; row.dataset.id=p.id;
+    row.innerHTML = '<span class="dot" style="color:'+HEX(p.accent)+';background:'+HEX(p.accent)+'"></span><span class="nm">'+p.name+'<small>'+p.en+'</small></span><span class="st off">装配</span>';
+    row.addEventListener('click', ()=>onPickPart(p.id)); listEl.appendChild(row);
+    const lb = document.createElement('div'); lb.className='label'; lb.dataset.id=p.id;
+    lb.innerHTML = '<span class="dot" style="color:'+HEX(p.accent)+';background:'+HEX(p.accent)+'"></span><span class="lt">'+p.name+'</span><span class="lp">'+p.params[0][1]+'</span>';
+    lb.addEventListener('click', ()=>onPickPart(p.id)); labelsEl.appendChild(lb); labels[p.id]=lb;
+  });
+  document.getElementById('parts-count').textContent = PARTS.length + ' 部件';
+
+  function onPickPart(id){ if(state.exploded[id]) resetPart(id); else explodePart(id); selectPart(id); updateUI(); }
+  function selectPart(id){ state.selected=id; refreshHighlights(); showDetail(id); }
+  function showDetail(id){
+    const p = PARTS.find(x=>x.id===id);
+    detailStateEl.textContent = p ? '已选择' : '未选择';
+    if(!p){ detailEl.innerHTML='<div class="d-empty"><span class="ico">🔍</span>点击画面中的部件<br/>或左侧清单，查看参数详情<br/>并触发拆解动画</div>'; return; }
+    const rows = p.params.map(([k,v])=>'<div class="dp"><span>'+k+'</span><span>'+v+'</span></div>').join('');
+    const btnLabel = (id==='doors') ? (state.exploded[id]?'关闭蝴蝶门':'开启蝴蝶门') : (state.exploded[id]?'已拆解 ✓':'拆解该部件');
+    detailEl.innerHTML =
+      '<div class="d-head"><span class="d-dot" style="color:'+HEX(p.accent)+';background:'+HEX(p.accent)+'"></span><div><h2>'+p.name+'</h2><div class="d-en">'+p.en+'</div></div><span class="d-tag">'+p.tag+'</span></div>'+
+      '<p class="d-desc">'+p.desc+'</p><div class="d-params">'+rows+'</div>'+
+      '<div class="d-actions"><button class="btn ghost" id="d-reset">复位</button><button class="btn" id="d-explode">'+btnLabel+'</button></div>';
+    document.getElementById('d-reset').addEventListener('click', ()=>{ resetPart(id); selectPart(id); updateUI(); });
+    document.getElementById('d-explode').addEventListener('click', ()=>{ explodePart(id); selectPart(id); updateUI(); });
+  }
+  function updateUI(){
+    PARTS.forEach(p=>{
+      const row = listEl.querySelector('.row[data-id="'+p.id+'"]'); const st = row.querySelector('.st');
+      const exploded = !!state.exploded[p.id];
+      st.textContent = exploded ? (p.id==='doors'?'已开启':'已拆解') : (p.id==='doors'?'关闭':'装配');
+      st.className = 'st ' + (exploded?'on':'off');
+      row.classList.toggle('sel', state.selected===p.id);
+      labels[p.id].classList.toggle('active', state.selected===p.id);
+    });
+    if(state.selected) showDetail(state.selected);
+  }
+
+  document.getElementById('btn-explode-all').addEventListener('click', explodeAll);
+  document.getElementById('btn-reset-all').addEventListener('click', resetAll);
+  document.getElementById('btn-doors').addEventListener('click', toggleDoors);
+  const btnLabels = document.getElementById('btn-labels');
+  btnLabels.addEventListener('click', ()=>{ state.labelsVisible=!state.labelsVisible; btnLabels.classList.toggle('active', state.labelsVisible); });
+  const btnRotate = document.getElementById('btn-rotate');
+  btnRotate.addEventListener('click', ()=>{ controls.autoRotate=!controls.autoRotate; btnRotate.classList.toggle('active', controls.autoRotate); });
+  const btnWire = document.getElementById('btn-wire');
+  btnWire.addEventListener('click', ()=>{ state.wireframe=!state.wireframe; btnWire.classList.toggle('active', state.wireframe); for(const id in parts) for(const h of parts[id].glowMats) h.mat.wireframe = state.wireframe; });
+
+  /* ----------------------------- 拾取 ----------------------------- */
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let downPos = null;
+  function findPartId(obj){ let o=obj; while(o){ if(o.userData && o.userData.partId) return o.userData.partId; o=o.parent; } return null; }
+  function pick(cx, cy){ pointer.x=(cx/window.innerWidth)*2-1; pointer.y=-(cy/window.innerHeight)*2+1; raycaster.setFromCamera(pointer, camera); const hits=raycaster.intersectObjects(pickableList, true); for(const h of hits){ const id=findPartId(h.object); if(id) return id; } return null; }
+  renderer.domElement.addEventListener('pointerdown', e=>{ if(e.button===0) downPos={x:e.clientX,y:e.clientY}; });
+  window.addEventListener('pointerup', e=>{
+    if(e.button===0 && downPos){ const dx=e.clientX-downPos.x, dy=e.clientY-downPos.y;
+      if(dx*dx+dy*dy < 25){ const id=pick(e.clientX,e.clientY); if(id) onPickPart(id); else { state.selected=null; refreshHighlights(); showDetail(null); updateUI(); } }
+      downPos=null; }
+  });
+  renderer.domElement.addEventListener('pointermove', e=>{ const id=pick(e.clientX,e.clientY); if(id!==state.hovered){ state.hovered=id; refreshHighlights(); renderer.domElement.style.cursor = id?'pointer':'default'; } });
+
+  function updateLabels(){
+    const w=window.innerWidth, h=window.innerHeight;
+    PARTS.forEach(p=>{
+      const part=parts[p.id], el=labels[p.id];
+      if(!state.labelsVisible){ el.style.display='none'; return; }
+      part.labelTarget.getWorldPosition(_v1); _v1.add(part.labelOffset).project(camera);
+      if(_v1.z>1 || _v1.x<-1.2 || _v1.x>1.2 || _v1.y<-1.2 || _v1.y>1.2){ el.style.display='none'; return; }
+      el.style.display='block';
+      el.style.transform = 'translate(-50%,-130%) translate('+((_v1.x*0.5+0.5)*w).toFixed(1)+'px,'+((-_v1.y*0.5+0.5)*h).toFixed(1)+'px)';
+    });
+  }
+  function updateLeaders(){
+    for(const id in parts){
+      const exploded = !!state.exploded[id];
+      for(const seg of parts[id].segments){
+        const mat = seg.line.material; const target = exploded ? 0.55 : 0;
+        mat.opacity += (target-mat.opacity)*0.18;
+        if(mat.opacity>0.015){ const attr=seg.line.geometry.attributes.position; attr.setXYZ(1, seg.obj.position.x, seg.obj.position.y, seg.obj.position.z); attr.needsUpdate=true; seg.line.visible=true; }
+        else seg.line.visible=false;
+      }
+    }
+  }
+  function updateGlow(t){
+    for(const id in parts){
+      const part = parts[id];
+      const selected = state.selected===id, hovered = state.hovered===id;
+      const pulse = 0.5+0.5*Math.sin(t*4.2);
+      let target = 0; if(selected) target = 0.55+0.3*pulse; else if(hovered) target = 0.2;
+      part.glow.material.opacity += (target-part.glow.material.opacity)*0.2;
+      part.glow.scale.setScalar(1.45+0.55*pulse);
+      part.labelTarget.getWorldPosition(_v1).add(part.labelOffset); part.glow.position.copy(_v1);
+      part.glow.visible = part.glow.material.opacity > 0.02;
+    }
+  }
+
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    controls.update(dt); processTweens(); updateLeaders(); updateLabels(); updateGlow(clock.elapsedTime);
+    renderer.render(scene, camera);
+  }
+  window.addEventListener('resize', ()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+  document.getElementById('loading').style.opacity='0';
+  setTimeout(()=>{ document.getElementById('loading').style.display='none'; }, 500);
+  animate();
+})();
+</script>
+</body>
+</html>

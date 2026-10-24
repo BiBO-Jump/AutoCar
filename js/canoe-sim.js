@@ -18,7 +18,7 @@ const CANOE_SIM_STATE = {
     }
 };
 
-/* 真实车载信号模型：泊车场景相关 */
+/* 车载信号模型：车辆加减速场景 */
 const SIM_SIGNALS = [
     {
         id: '0x100', name: 'EngineSpeed', dlc: 8, cycle: 50,
@@ -28,8 +28,14 @@ const SIM_SIGNALS = [
     },
     {
         id: '0x101', name: 'VehicleSpeed', dlc: 4, cycle: 100,
-        desc: '车速 (0.01km/h)',
-        data: () => [randHex(0x00, 0x3C), randHex(0x00, 0x00), 0, 0],
+        desc: '车速 (0.01km/h) · 0→100→0 加减速循环',
+        data: () => {
+            // 20s 一个循环：前 10s 从 0 加速到 100，后 10s 从 100 减速到 0
+            const t = Date.now() % 20000;
+            const speed = t < 10000 ? (t / 10000) * 100 : ((20000 - t) / 10000) * 100;
+            const raw = Math.round(speed * 100) & 0xFFFF;   // 0.01 km/h 分辨率
+            return [(raw >> 8) & 0xFF, raw & 0xFF, 0, 0];
+        },
         color: 'text-emerald-400',
         extract: (bytes) => ((bytes[0] << 8) | bytes[1]) / 100.0   // km/h
     },
@@ -67,10 +73,12 @@ const SIM_SIGNALS = [
         id: '0x400', name: 'Acceleration', dlc: 6, cycle: 50,
         desc: '纵向 + 横向加速度 (0.01g)',
         data: () => {
-            const la = Math.sin(Date.now() / 600) * 80;
-            const laHex = Math.round(la) & 0xFFFF;
-            const lat = Math.cos(Date.now() / 900) * 60;
-            const latHex = Math.round(lat) & 0xFFFF;
+            // 纵向加速度随加减速阶段切换：加速段 +0.3g，减速段 -0.3g
+            const t = Date.now() % 20000;
+            const la = t < 10000 ? 30 : -30;   // 0.01g 单位 → ±0.30g
+            const laHex = ((la & 0xFFFF) << 16) >> 16;   // 保留符号
+            const lat = Math.round(Math.cos(Date.now() / 900) * 20);
+            const latHex = ((lat & 0xFFFF) << 16) >> 16;
             return [(laHex >> 8) & 0xFF, laHex & 0xFF, (latHex >> 8) & 0xFF, latHex & 0xFF, 0, 0];
         },
         color: 'text-pink-400',
@@ -148,14 +156,14 @@ function renderCanoeSimulator() {
                         <div class="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center text-2xl">🖥️</div>
                         <div>
                             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold">CANoe 交互式模拟器</h1>
-                            <p class="text-cyan-100 text-xs sm:text-sm mt-1">从硬件到软件 · 含泊车/转向/车速/加速度实时曲线</p>
+                            <p class="text-cyan-100 text-xs sm:text-sm mt-1">从硬件到软件 · 含车速 0→100→0 加减速与纵向加速度实时曲线</p>
                         </div>
                     </div>
                     <div class="flex gap-2 flex-wrap mt-3">
                         <span class="badge bg-white/20">🔧 VN1610 指示灯面板</span>
                         <span class="badge bg-white/20">📊 Graphics 实时曲线</span>
                         <span class="badge bg-white/20">🔧 UDS Diagnostics</span>
-                        <span class="badge bg-white/20">⚠️ 泊车场景信号</span>
+                        <span class="badge bg-white/20">🚗 加减速场景信号</span>
                     </div>
                 </div>
             </div>
@@ -515,14 +523,12 @@ CAN<br>
             body: `
                 <p class="text-slate-700 text-sm leading-relaxed mb-3">
                     这是 CANoe 最强大的功能！Window → Graphics Window → 从 Symbol Explorer 把信号<strong>拖进图表</strong>。
-                    泊车场景常用：<strong>转向角 SteeringAngle、车速 VehicleSpeed、加速度 Accel、泊车状态位 ParkState</strong>。
+                    车辆加减速场景常用：<strong>车速 VehicleSpeed（0→100→0 循环）、纵向加速度 LongAccel</strong>。
                 </p>
                 <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg p-3 text-[10px] font-mono text-emerald-300 mb-3">
 <span class="text-slate-400">// Graphics Window 实时波形示意</span><br>
-SteeringAngle (°)  │  /\\_/\\____/\\      ← 来回打方向  │<br>
-VehicleSpeed (km/h)│  ───\\_____/───   ← 起步加速  │<br>
-LongAccel (g)      │  _/\\_/\\____      ← 加减速  │<br>
-ParkState          │  0→1→2→3→4→0    ← 状态机切换  │
+VehicleSpeed (km/h)│  ╱╲      ← 0→100→0 三角波循环  │<br>
+LongAccel (g)      │  +__--   ← 加速 +0.3g / 减速 -0.3g  │<br>
                 </div>
                 <button onclick="canoeSetTab('simulator')" class="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 text-white font-bold py-2.5 rounded-lg">
                     🎯 去模拟实验台亲手试！
@@ -657,7 +663,7 @@ function renderWbLeftPanel() {
 
         <!-- 快捷预设 -->
         <div>
-            <div class="text-cyan-400 font-semibold text-xs mb-2">⚡ 快捷报文（泊车场景）</div>
+            <div class="text-cyan-400 font-semibold text-xs mb-2">⚡ 快捷报文（车辆信号）</div>
             <div class="grid grid-cols-2 gap-1.5">
                 ${SIM_SIGNALS.map((m, i) => `
                     <button onclick="canoePreset('${m.id}', '${m.data().join(' ')}', ${m.cycle})"
@@ -684,31 +690,28 @@ function renderWbGraphics() {
     return `
         <div class="bg-slate-950 rounded-xl border border-slate-700 overflow-hidden">
             <div class="bg-slate-800 px-3 py-2 border-b border-slate-700 flex items-center justify-between flex-wrap gap-1">
-                <div class="flex items-center gap-2 text-xs font-bold text-white">📊 Graphics Window (泊车信号)</div>
+                <div class="flex items-center gap-2 text-xs font-bold text-white">📊 Graphics Window (车速信号)</div>
                 <span id="gfx-stat" class="text-[10px] text-slate-400">实时波形</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-0 border-b border-slate-700">
-                ${renderGfxMini('VehicleSpeed', '车速 km/h', 0, 80, '#10b981')}
-                ${renderGfxMini('SteeringAngle', '转向角 °', -360, 360, '#a78bfa')}
-                ${renderGfxMini('LongAccel', '纵向加速度 g', -2, 2, '#f472b6')}
-                ${renderGfxMini('LatAccel', '横向加速度 g', -2, 2, '#fbbf24')}
+                ${renderGfxMini('VehicleSpeed', '车速 km/h', 0, 100, '#10b981')}
+                ${renderGfxMini('LongAccel', '纵向加速度 g', -1, 1, '#f472b6')}
             </div>
             <div class="p-3 border-b border-slate-700">
                 <div class="text-[10px] text-slate-400 mb-2 flex items-center justify-between">
-                    <span>🧭 泊车状态机 ParkingState</span>
-                    <span id="park-state-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300">Idle</span>
+                    <span>🚗 加减速阶段</span>
+                    <span id="speed-phase-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300">—</span>
                 </div>
-                <div class="grid grid-cols-6 gap-1.5">
-                    ${['Idle','Search','Align','Back','Done','Fault'].map((s,i) => `
+                <div class="grid grid-cols-3 gap-1.5">
+                    ${[{k:'accel',n:'加速',c:'emerald'},{k:'cruise',n:'匀速',c:'cyan'},{k:'decel',n:'减速',c:'rose'}].map(p => `
                         <div class="text-center text-[9px]">
-                            <div id="park-dot-${i}" class="w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700">${i}</div>
-                            <div class="text-slate-500 mt-0.5 leading-none">${s}</div>
+                            <div id="phase-dot-${p.k}" class="w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700">${p.n}</div>
                         </div>
                     `).join('')}
                 </div>
             </div>
             <div class="text-[10px] text-slate-500 p-3">
-                💡 点击 <span class="text-cyan-400">▶ 开始</span> 启动测量 → 这些曲线会自动滚动，反映泊车搜索→对准→倒车→完成的全过程
+                💡 点击 <span class="text-cyan-400">▶ 开始</span> 启动测量 → 车速曲线自动从 <span class="text-emerald-400">0 加速到 100</span>，再 <span class="text-rose-400">减速回到 0</span>，循环往复（20s/周期）
             </div>
         </div>
     `;
@@ -966,61 +969,49 @@ function updateGraphics(msg) {
     const buf = CANOE_SIM_STATE.signalBuf;
     if (msg.isError || msg.data === undefined) return;
     const b = msg.data.map(h => parseInt(h, 16));
-    // SteeringAngle from 0x123
-    if (msg.id === '0x123' && msg.data.length >= 4 && msg.extract) {
-        const val = msg.extract(b);
-        buf.SteeringAngle.push(val);
-        if (buf.SteeringAngle.length > 100) buf.SteeringAngle.shift();
-        drawLine('SteeringAngle', val, -360, 360);
-    }
-    // VehicleSpeed from 0x101
+    // VehicleSpeed from 0x101 —— 0→100→0 加减速三角波
     if (msg.id === '0x101' && msg.extract) {
         const val = msg.extract(b);
         buf.VehicleSpeed.push(val);
         if (buf.VehicleSpeed.length > 100) buf.VehicleSpeed.shift();
-        drawLine('VehicleSpeed', val, 0, 80);
+        drawLine('VehicleSpeed', val, 0, 100);
+        // 同步更新加减速阶段指示
+        updateSpeedPhase(val);
     }
-    // Acceleration from 0x400
+    // LongAccel from 0x400 —— 加速段 +0.3g / 减速段 -0.3g
     if (msg.id === '0x400') {
         const sim = SIM_SIGNALS.find(s => s.id === '0x400');
         if (sim) {
-            buf.LongAccel.push(sim.extractLong(b));
-            buf.LatAccel.push(sim.extractLat(b));
-            if (buf.LongAccel.length > 100) { buf.LongAccel.shift(); buf.LatAccel.shift(); }
-            drawLine('LongAccel', sim.extractLong(b), -2, 2);
-            drawLine('LatAccel', sim.extractLat(b), -2, 2);
+            const longVal = sim.extractLong(b);
+            buf.LongAccel.push(longVal);
+            if (buf.LongAccel.length > 100) buf.LongAccel.shift();
+            drawLine('LongAccel', longVal, -1, 1);
         }
     }
-    // ParkingState from 0x200
-    if (msg.id === '0x200') {
-        const state = b[0];
-        buf.ParkingState.push(state);
-        if (buf.ParkingState.length > 100) buf.ParkingState.shift();
-        const labels = ['Idle空闲','Searching搜索','Aligning对准','BackingIn倒车','Completed完成','Fault故障'];
-        const label = labels[state] || 'Unknown';
-        const badge = document.getElementById('park-state-badge');
-        if (badge) { badge.textContent = label; badge.className = 'px-2 py-0.5 rounded text-[10px] ' + 
-            ({0:'bg-slate-700 text-slate-300',1:'bg-yellow-600 text-white',2:'bg-blue-600 text-white',3:'bg-rose-600 text-white',4:'bg-emerald-600 text-white',5:'bg-red-600 text-white'}[state] || 'bg-slate-600 text-white'); }
-        // 点亮圆点
-        for (let i = 0; i < 6; i++) {
-            const dot = document.getElementById('park-dot-' + i);
-            if (!dot) continue;
-            if (i === state) {
-                dot.className = 'w-full h-6 rounded bg-cyan-500 flex items-center justify-center transition-all border border-cyan-400 text-white';
-                dot.textContent = state;
-            } else if (i < state) {
-                dot.className = 'w-full h-6 rounded bg-emerald-700 flex items-center justify-center transition-all border border-emerald-600 text-white opacity-70';
-                dot.textContent = i;
-            } else {
-                dot.className = 'w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700 text-slate-500';
-                dot.textContent = i;
-            }
-        }
-        // 同时把 Gear 也渲染一下
-        const gear = b[1];
-        const gearMap = ['P','P','R','N','D'][gear] || '?';
-        const gearEl = document.getElementById('gfx-val-Gear');
-    }
+}
+
+function updateSpeedPhase(speed) {
+    const badge = document.getElementById('speed-phase-badge');
+    const accelDot = document.getElementById('phase-dot-accel');
+    const cruiseDot = document.getElementById('phase-dot-cruise');
+    const decelDot = document.getElementById('phase-dot-decel');
+    if (!badge) return;
+    const buf = CANOE_SIM_STATE.signalBuf.VehicleSpeed || [];
+    const prev = buf.length > 1 ? buf[buf.length - 2] : speed;
+    let phase, label, color;
+    if (speed > prev + 0.05)      { phase = 'accel';  label = '加速中 ↑'; color = 'emerald'; }
+    else if (speed < prev - 0.05) { phase = 'decel';  label = '减速中 ↓'; color = 'rose'; }
+    else                          { phase = 'cruise'; label = '匀速 →';  color = 'cyan'; }
+    badge.textContent = label;
+    badge.className = 'px-2 py-0.5 rounded text-[10px] text-white ' +
+        ({emerald:'bg-emerald-600',cyan:'bg-cyan-600',rose:'bg-rose-600'}[color] || 'bg-slate-700');
+    const map = { accel: accelDot, cruise: cruiseDot, decel: decelDot };
+    Object.entries(map).forEach(([k, el]) => {
+        if (!el) return;
+        if (k === phase) el.className = 'w-full h-6 rounded flex items-center justify-center transition-all border text-white ' +
+            ({emerald:'bg-emerald-500 border-emerald-400',cyan:'bg-cyan-500 border-cyan-400',rose:'bg-rose-500 border-rose-400'}[color] || 'bg-slate-700');
+        else el.className = 'w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700 text-slate-500';
+    });
 }
 
 function drawLine(key, currentVal, min, max) {
@@ -1044,18 +1035,18 @@ function drawLine(key, currentVal, min, max) {
 }
 
 function clearWbGraphics() {
-    ['VehicleSpeed','SteeringAngle','LongAccel','LatAccel'].forEach(k => {
+    ['VehicleSpeed','LongAccel'].forEach(k => {
         const path = document.getElementById('gfx-path-' + k);
         const valEl = document.getElementById('gfx-val-' + k);
         if (path) path.setAttribute('d', '');
         if (valEl) valEl.textContent = '—';
     });
-    for (let i = 0; i < 6; i++) {
-        const dot = document.getElementById('park-dot-' + i);
-        if (dot) { dot.className = 'w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700'; dot.textContent = i; }
-    }
-    const badge = document.getElementById('park-state-badge');
-    if (badge) { badge.textContent = 'Idle'; badge.className = 'px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300'; }
+    ['accel','cruise','decel'].forEach(k => {
+        const dot = document.getElementById('phase-dot-' + k);
+        if (dot) dot.className = 'w-full h-6 rounded bg-slate-800 flex items-center justify-center transition-all border border-slate-700 text-slate-500';
+    });
+    const badge = document.getElementById('speed-phase-badge');
+    if (badge) { badge.textContent = '—'; badge.className = 'px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300'; }
 }
 
 /* ===== Diagnostics UDS ===== */

@@ -847,7 +847,7 @@ function renderFooter() {
                 </div>
             </div>
             <div class="border-t border-slate-700 mt-6 sm:mt-8 pt-4 sm:pt-6 text-center text-slate-500 text-xs sm:text-sm">
-                © 2024 九键车载学习平台 · 让智能驾驶与新能源技术学习更专业
+                © 2026 九键车载学习平台 · 让智能驾驶与新能源技术学习更专业
             </div>
         </div>
     `;
